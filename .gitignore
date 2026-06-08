@@ -35,3 +35,4 @@ annot_at-*.tar
 npm-debug.log
 /assets/node_modules/
 
+.mix_tasks
