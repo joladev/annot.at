@@ -65,7 +65,9 @@ defmodule AnnotAt.MixProject do
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      {:jose, "~> 1.11"},
+      {:credo, "~> 1.7", only: [:dev, :test]}
     ]
   end
 
@@ -88,7 +90,13 @@ defmodule AnnotAt.MixProject do
         "esbuild annot_at --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "format",
+        "test",
+        "credo --strict"
+      ]
     ]
   end
 end
