@@ -1,0 +1,8 @@
+{
+  "access_token": "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJFUzI1NiJ9.fake-payload.fake-signature",
+  "token_type": "DPoP",
+  "refresh_token": "ref-3C2EzDmzzkrcA9rerRmYeg5wBPCRZdnGRkRKUOvbLq",
+  "scope": "atproto",
+  "expires_in": 3599,
+  "sub": "did:plc:ewvi7nxzyoun6zhxrhs64oiz"
+}
