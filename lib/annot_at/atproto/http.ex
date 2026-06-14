@@ -34,6 +34,36 @@ defmodule AnnotAt.Atproto.HTTP do
     get_body(url)
   end
 
+  @doc """
+  POSTs `form` as `application/x-www-form-urlencoded` with `headers`, returning
+  the raw status, body, and response headers.
+
+  Unlike `get_json/1` this neither treats non-2xx as an error nor decodes the
+  body: atproto OAuth endpoints return meaningful JSON and a `DPoP-Nonce` header
+  on 4xx responses, which the caller must inspect to drive the none retry.
+  """
+  @spec post_form(String.t(), keyword() | map(), [{String.t(), String.t()}]) ::
+          {:ok,
+           %{status: pos_integer(), body: binary(), headers: %{optional(binary()) => [binary()]}}}
+          | {:error, {:transport, term()}}
+  def post_form(url, form, headers \\ []) do
+    options = [
+      url: url,
+      form: form,
+      headers: headers,
+      decode_body: false,
+      receive_timeout: @receive_timeout
+    ]
+
+    case Req.post(options) do
+      {:ok, %Req.Response{status: status, body: body, headers: resp_headers}} ->
+        {:ok, %{status: status, body: body, headers: resp_headers}}
+
+      {:error, reason} ->
+        {:error, {:transport, reason}}
+    end
+  end
+
   defp get_body(url) when is_binary(url) do
     case Req.get(url, decode_body: false, receive_timeout: @receive_timeout) do
       {:ok, %Req.Response{status: status, body: body}} when status in 200..299 -> {:ok, body}
