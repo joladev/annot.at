@@ -6,6 +6,7 @@ defmodule AnnotAt.Atproto.OAuth.FlowTest do
   alias AnnotAt.Atproto.OAuth.ClientAssertion
   alias AnnotAt.Atproto.OAuth.Flow
   alias AnnotAt.Atproto.OAuth.ServerMetadata
+  alias AnnotAt.Atproto.OAuth.Session
 
   @did "did:plc:ewvi7nxzyoun6zhxrhs64oiz"
   @pds "https://enoki.us-east.host.bsky.network"
@@ -185,6 +186,47 @@ defmodule AnnotAt.Atproto.OAuth.FlowTest do
     end
   end
 
+  describe "Flow.refresh/3" do
+    test "refreshes a session, rotating the tokens", %{jwk: jwk} do
+      session = session_fixture(jwk)
+
+      expect(HTTP, :post_form, fn _url, _form, _headers ->
+        {:ok, %{status: 200, body: @token_response, headers: %{}}}
+      end)
+
+      assert {:ok, refreshed} = Flow.refresh(@server, session, refresh_opts(jwk))
+      assert @did == refreshed.did
+      assert "ref-3C2EzDmzzkrcA9rerRmYeg5wBPCRZdnGRkRKUOvbLq" == refreshed.refresh_token
+      assert refreshed.refresh_token != session.refresh_token
+      assert jwk == refreshed.dpop_key
+      assert ~U[2026-06-01 12:59:59Z] == refreshed.expires_at
+    end
+
+    test "sends the refresh parameters", %{jwk: jwk} do
+      expect(HTTP, :post_form, fn url, form, _headers ->
+        assert "https://bsky.social/oauth/token" == url
+        assert "refresh_token" == form[:grant_type]
+        assert "old-refresh" == form[:refresh_token]
+        assert ClientAssertion.assertion_type() == form[:client_assertion_type]
+        assert is_binary(form[:client_assertion])
+
+        {:ok, %{status: 200, body: @token_response, headers: %{}}}
+      end)
+
+      assert {:ok, _} = Flow.refresh(@server, session_fixture(jwk), refresh_opts(jwk))
+    end
+
+    test "rejects a refresh whose sub does not match the session DID", %{jwk: jwk} do
+      session = %{session_fixture(jwk) | did: "did:plc:someoneelse"}
+
+      expect(HTTP, :post_form, fn _url, _form, _headers ->
+        {:ok, %{status: 200, body: @token_response, headers: %{}}}
+      end)
+
+      assert {:error, :did_mismatch} == Flow.refresh(@server, session, refresh_opts(jwk))
+    end
+  end
+
   defp exchange_opts(jwk, overrides \\ []) do
     Keyword.merge(
       [
@@ -198,6 +240,26 @@ defmodule AnnotAt.Atproto.OAuth.FlowTest do
         pds_endpoint: @pds,
         now: ~U[2026-01-01 00:00:00Z]
       ],
+      overrides
+    )
+  end
+
+  defp session_fixture(jwk) do
+    %Session{
+      did: @did,
+      access_token: "old-access",
+      refresh_token: "old-refresh",
+      dpop_key: jwk,
+      scope: "atproto",
+      issuer: "https://bsky.social",
+      pds_endpoint: @pds,
+      expires_at: ~U[2026-01-01 00:00:00Z]
+    }
+  end
+
+  defp refresh_opts(jwk, overrides \\ []) do
+    Keyword.merge(
+      [client_id: "https://annot.at/client", client_jwk: jwk, now: ~U[2026-06-01 12:00:00Z]],
       overrides
     )
   end

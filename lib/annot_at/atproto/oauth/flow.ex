@@ -137,6 +137,45 @@ defmodule AnnotAt.Atproto.OAuth.Flow do
     end
   end
 
+  @doc """
+  Refreshes a session, returning a new session with rotated tokens.
+
+  The refresh is DPoP-bound to the session's existing key (the tokens are
+  bound to it), and the new `sub` must still match the session's DID. Refresh
+  tokens are single-use, so the returned session carries the rotated tokens
+  and must replace the old one.
+
+  ## Required options
+  - `:client_id`, `:client_jwk` - the confidential client's id and signing key
+
+  ## Optional
+  - `:now` - base time for `expires_at` (defaults to the current time)
+  """
+  @spec refresh(ServerMetadata.t(), Session.t(), keyword()) ::
+          {:ok, Session.t()}
+          | {:error,
+             request_error() | {:missing, String.t()} | {:invalid, String.t()} | :did_mismatch}
+  def refresh(%ServerMetadata{} = server, %Session{} = session, opts) do
+    client_id = Keyword.fetch!(opts, :client_id)
+    client_jwk = Keyword.fetch!(opts, :client_jwk)
+    now = Keyword.get_lazy(opts, :now, &DateTime.utc_now/0)
+
+    build_form = fn ->
+      [
+        grant_type: "refresh_token",
+        refresh_token: session.refresh_token,
+        client_assertion_type: ClientAssertion.assertion_type(),
+        client_assertion: ClientAssertion.sign(client_jwk, client_id, server.issuer)
+      ]
+    end
+
+    with {:ok, body} <- dpop_request(server.token_endpoint, build_form, session.dpop_key),
+         {:ok, tokens} <- TokenResponse.parse(body),
+         :ok <- verify_sub(tokens.sub, session.did) do
+      {:ok, build_session(tokens, server, session.pds_endpoint, session.dpop_key, now)}
+    end
+  end
+
   defp dpop_request(url, build_form, dpop_key, nonce \\ nil) do
     proof = DPoP.proof(dpop_key, "POST", url, nonce: nonce)
 
