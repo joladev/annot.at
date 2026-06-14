@@ -67,7 +67,8 @@ defmodule AnnotAt.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       {:jose, "~> 1.11"},
-      {:credo, "~> 1.7", only: [:dev, :test]}
+      {:credo, "~> 1.7", only: [:dev, :test]},
+      {:mimic, "~> 2.3", only: :test}
     ]
   end
 
