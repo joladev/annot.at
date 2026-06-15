@@ -3,6 +3,7 @@ defmodule AnnotAt.AccountsTest do
 
   alias AnnotAt.Accounts
   alias AnnotAt.Accounts.AtprotoSession
+  alias AnnotAt.Accounts.OAuthLoginRequest
   alias AnnotAt.Accounts.User
 
   @did "did:plc:ewvi7nxzyoun6zhxrhs64oiz"
@@ -92,5 +93,53 @@ defmodule AnnotAt.AccountsTest do
 
     refute Accounts.get_atproto_session(user.id)
     assert Accounts.get_user!(user.id)
+  end
+
+  test "create_login_request/1 then take_login_request/1 round-trips a login" do
+    {:ok, _} = Accounts.create_login_request(login_request_attrs())
+
+    request = Accounts.take_login_request("state-123")
+    assert @did == request.did
+    assert "verifier-123" == request.pkce_verifier
+  end
+
+  test "take_login_request/1 is single-use" do
+    {:ok, _} = Accounts.create_login_request(login_request_attrs())
+
+    assert Accounts.take_login_request("state-123")
+    refute Accounts.take_login_request("state-123")
+  end
+
+  test "take_login_request/1 returns nil for an unknown state" do
+    refute Accounts.take_login_request("nope")
+  end
+
+  test "delete_expired_login_requests/1 removes only old requests" do
+    {:ok, old} = Accounts.create_login_request(login_request_attrs(%{state: "old"}))
+    {:ok, _} = Accounts.create_login_request(login_request_attrs(%{state: "fresh"}))
+
+    Repo.update_all(
+      from(r in OAuthLoginRequest, where: r.id == ^old.id),
+      set: [inserted_at: ~U[2020-01-01 00:00:00Z]]
+    )
+
+    assert 1 == Accounts.delete_expired_login_requests(3600)
+    refute Accounts.take_login_request("old")
+    assert Accounts.take_login_request("fresh")
+  end
+
+  defp login_request_attrs(overrides \\ %{}) do
+    Map.merge(
+      %{
+        state: "state-123",
+        did: @did,
+        handle: "alice.test",
+        pds_host: "https://pds.example.com",
+        auth_server_issuer: "https://bsky.social",
+        pkce_verifier: "verifier-123",
+        dpop_private_jwk: "{}"
+      },
+      overrides
+    )
   end
 end

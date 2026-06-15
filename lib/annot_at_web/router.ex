@@ -1,6 +1,8 @@
 defmodule AnnotAtWeb.Router do
   use AnnotAtWeb, :router
 
+  import AnnotAtWeb.UserAuth
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -8,6 +10,7 @@ defmodule AnnotAtWeb.Router do
     plug :put_root_layout, html: {AnnotAtWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :fetch_current_scope
   end
 
   pipeline :api do
@@ -18,6 +21,17 @@ defmodule AnnotAtWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    get "/login", AuthController, :new
+    post "/login", AuthController, :create
+    get "/auth/callback", AuthController, :callback
+    delete "/logout", AuthController, :delete
+  end
+
+  scope "/", AnnotAtWeb do
+    pipe_through :api
+
+    get "/oauth-client-metadata.json", AuthController, :client_metadata
   end
 
   # Other scopes may use custom stacks.

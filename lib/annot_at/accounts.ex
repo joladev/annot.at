@@ -6,12 +6,17 @@ defmodule AnnotAt.Accounts do
   import Ecto.Query, only: [from: 2]
 
   alias AnnotAt.Accounts.AtprotoSession
+  alias AnnotAt.Accounts.OAuthLoginRequest
   alias AnnotAt.Accounts.User
   alias AnnotAt.Repo
 
   @spec get_user!(integer()) :: User.t()
   def get_user!(id) do
     Repo.get!(User, id)
+  end
+
+  def get_user(id) do
+    Repo.get(User, id)
   end
 
   @spec get_user_by_did(String.t()) :: User.t() | nil
@@ -68,5 +73,39 @@ defmodule AnnotAt.Accounts do
       conflict_target: :user_id,
       returning: true
     )
+  end
+
+  @doc """
+  Stores an in-progress login, keyed by its OAuth `state`.
+  """
+  @spec create_login_request(map()) :: {:ok, OAuthLoginRequest.t()} | {:error, Ecto.Changeset.t()}
+  def create_login_request(request_attrs) do
+    Repo.insert(OAuthLoginRequest.changeset(%OAuthLoginRequest{}, request_attrs))
+  end
+
+  @doc """
+  Atomically fetches and deletes the login request for `state` or `nil`.
+
+  Single use: a `state` is consumed exactly once, even under concurrent
+  callbacks, since the delete and read happen in one statement.
+  """
+  @spec take_login_request(String.t()) :: OAuthLoginRequest.t() | nil
+  def take_login_request(state) do
+    query = from(r in OAuthLoginRequest, where: r.state == ^state, select: r)
+
+    case Repo.delete_all(query) do
+      {1, [request]} -> request
+      {0, []} -> nil
+    end
+  end
+
+  @doc """
+  Deletes login requests older than `max_age_seconds` (abandoned logins.)
+  """
+  @spec delete_expired_login_requests(pos_integer()) :: non_neg_integer()
+  def delete_expired_login_requests(max_age_seconds) do
+    cutoff = DateTime.add(DateTime.utc_now(), -max_age_seconds, :second)
+    {count, _} = Repo.delete_all(from(r in OAuthLoginRequest, where: r.inserted_at < ^cutoff))
+    count
   end
 end

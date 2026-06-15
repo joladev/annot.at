@@ -60,6 +60,11 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+config :annot_at, AnnotAt.Atproto.OAuth.Config,
+  scope: "atproto",
+  signing_jwk:
+    ~s({"crv":"P-256","d":"h0MvqcXLcKqWZFnqUCAuc6Bmt6gGzj5F5sFOCaUD4Jw","kty":"EC","x":"u0_K5EPDBIlGVp_rUUKucDviS-Owhiv4jnpMCeI7ojY","y":"v_XGrdUIww1wsRA7TUqMWIAJXmi2V8mnoF24Vg5OkvQ"})
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

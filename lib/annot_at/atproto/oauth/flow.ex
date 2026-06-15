@@ -17,6 +17,8 @@ defmodule AnnotAt.Atproto.OAuth.Flow do
   alias AnnotAt.Atproto.OAuth.Session
   alias AnnotAt.Atproto.OAuth.TokenResponse
 
+  require Logger
+
   @type request_error ::
           {:transport, term()}
           | :invalid_json
@@ -125,6 +127,7 @@ defmodule AnnotAt.Atproto.OAuth.Flow do
         code: code,
         redirect_uri: redirect_uri,
         code_verifier: code_verifier,
+        client_id: client_id,
         client_assertion_type: ClientAssertion.assertion_type(),
         client_assertion: ClientAssertion.sign(client_jwk, client_id, server.issuer)
       ]
@@ -164,6 +167,7 @@ defmodule AnnotAt.Atproto.OAuth.Flow do
       [
         grant_type: "refresh_token",
         refresh_token: session.refresh_token,
+        client_id: client_id,
         client_assertion_type: ClientAssertion.assertion_type(),
         client_assertion: ClientAssertion.sign(client_jwk, client_id, server.issuer)
       ]
@@ -190,6 +194,7 @@ defmodule AnnotAt.Atproto.OAuth.Flow do
           retry_with_nonce(url, build_form, dpop_key, headers)
 
         Map.has_key?(body, "error") ->
+          Logger.warning("atproto OAuth error from #{url}: #{inspect(body)}")
           {:error, {:oauth_error, Map.fetch!(body, "error")}}
 
         true ->

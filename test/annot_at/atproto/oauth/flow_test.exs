@@ -146,6 +146,8 @@ defmodule AnnotAt.Atproto.OAuth.FlowTest do
         assert "authorization_code" == form[:grant_type]
         assert "auth-code" == form[:code]
         assert "https://annot.at/callback" == form[:redirect_uri]
+        assert "https://annot.at/client" == form[:client_id]
+
         assert "verifier-123" == form[:code_verifier]
         assert ClientAssertion.assertion_type() == form[:client_assertion_type]
         assert is_binary(form[:client_assertion])
@@ -207,6 +209,8 @@ defmodule AnnotAt.Atproto.OAuth.FlowTest do
         assert "https://bsky.social/oauth/token" == url
         assert "refresh_token" == form[:grant_type]
         assert "old-refresh" == form[:refresh_token]
+        assert "https://annot.at/client" == form[:client_id]
+
         assert ClientAssertion.assertion_type() == form[:client_assertion_type]
         assert is_binary(form[:client_assertion])
 

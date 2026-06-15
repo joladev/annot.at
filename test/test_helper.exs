@@ -1,5 +1,9 @@
-Mimic.copy(AnnotAt.Atproto.HTTP)
 Mimic.copy(AnnotAt.Atproto.DNS)
+Mimic.copy(AnnotAt.Atproto.HTTP)
+Mimic.copy(AnnotAt.Atproto.Identity)
+Mimic.copy(AnnotAt.Atproto.OAuth.Discovery)
+Mimic.copy(AnnotAt.Atproto.OAuth.Flow)
+Mimic.copy(AnnotAt.Atproto.OAuth.Login)
 
 ExUnit.start()
 Ecto.Adapters.SQL.Sandbox.mode(AnnotAt.Repo, :manual)

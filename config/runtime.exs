@@ -55,6 +55,9 @@ if config_env() == :prod do
 
   host = System.get_env("PHX_HOST") || "example.com"
 
+  config :annot_at, AnnotAt.Atproto.OAuth.Config,
+    signing_jwk: System.fetch_env!("ATPROTO_CLIENT_PRIVATE_JWK")
+
   config :annot_at, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   config :annot_at, AnnotAtWeb.Endpoint,

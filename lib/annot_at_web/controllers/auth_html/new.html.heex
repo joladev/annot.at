@@ -1,0 +1,16 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <div class="mx-auto max-w-sm space-y-6 py-12">
+    <h1 class="text-2xl font-semibold">Sign in with Bluesky</h1>
+
+    <.form for={%{}} action={~p"/login"} method="post" id="login-form" class="space-y-4">
+      <.input
+        name="handle"
+        value={@handle}
+        label="Handle"
+        placeholder="alice.bsky.social"
+        required
+      />
+      <.button class="w-full">Continue</.button>
+    </.form>
+  </div>
+</Layouts.app>
