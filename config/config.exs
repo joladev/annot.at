@@ -65,6 +65,13 @@ config :annot_at, AnnotAt.Atproto.OAuth.Config,
   signing_jwk:
     ~s({"crv":"P-256","d":"h0MvqcXLcKqWZFnqUCAuc6Bmt6gGzj5F5sFOCaUD4Jw","kty":"EC","x":"u0_K5EPDBIlGVp_rUUKucDviS-Owhiv4jnpMCeI7ojY","y":"v_XGrdUIww1wsRA7TUqMWIAJXmi2V8mnoF24Vg5OkvQ"})
 
+config :annot_at, AnnotAt.Vault,
+  ciphers: [
+    default:
+      {Cloak.Ciphers.AES.GCM,
+       tag: "AES.GCM.V1", key: Base.decode64!("8h8cn7yiPKyVKiCURGpw7/lUPqxEOahH2C+0CdGQIbI=")}
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

@@ -8,10 +8,10 @@ defmodule AnnotAt.Accounts.AtprotoSession do
     field :auth_server_issuer, :string
     # Space-separated scopes from token response
     field :granted_scopes, :string
-    field :access_token, :string
-    field :refresh_token, :string
+    field :access_token, AnnotAt.Encrypted.Binary
+    field :refresh_token, AnnotAt.Encrypted.Binary
     # ES256 keypair for this session
-    field :dpop_private_jwk, :string
+    field :dpop_private_jwk, AnnotAt.Encrypted.Binary
     # Access token expiry
     field :expires_at, :utc_datetime
 

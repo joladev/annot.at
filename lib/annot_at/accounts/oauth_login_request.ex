@@ -11,9 +11,9 @@ defmodule AnnotAt.Accounts.OAuthLoginRequest do
     field :pds_host, :string
     field :auth_server_issuer, :string
     # PKCE verifier, its challenge went out in PAR, the verifier redeems the code
-    field :pkce_verifier, :string
+    field :pkce_verifier, AnnotAt.Encrypted.Binary
     # Per-session DPoP key (serialized), tokens get bound to it at exchange
-    field :dpop_private_jwk, :string
+    field :dpop_private_jwk, AnnotAt.Encrypted.Binary
 
     timestamps(type: :utc_datetime)
   end

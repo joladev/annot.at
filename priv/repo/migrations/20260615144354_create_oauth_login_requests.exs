@@ -8,8 +8,8 @@ defmodule AnnotAt.Repo.Migrations.CreateOauthLoginRequests do
       add :handle, :text, null: false
       add :pds_host, :text, null: false
       add :auth_server_issuer, :text, null: false
-      add :pkce_verifier, :text, null: false
-      add :dpop_private_jwk, :text, null: false
+      add :pkce_verifier, :binary, null: false
+      add :dpop_private_jwk, :binary, null: false
 
       timestamps(type: :utc_datetime)
     end

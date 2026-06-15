@@ -68,7 +68,9 @@ defmodule AnnotAt.MixProject do
       {:bandit, "~> 1.5"},
       {:jose, "~> 1.11"},
       {:credo, "~> 1.7", only: [:dev, :test]},
-      {:mimic, "~> 2.3", only: :test}
+      {:mimic, "~> 2.3", only: :test},
+      {:cloak, "~> 1.1"},
+      {:cloak_ecto, "~> 1.3"}
     ]
   end
 

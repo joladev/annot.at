@@ -9,6 +9,7 @@ defmodule AnnotAt.Application do
   def start(_type, _args) do
     children = [
       AnnotAtWeb.Telemetry,
+      AnnotAt.Vault,
       AnnotAt.Repo,
       {DNSCluster, query: Application.get_env(:annot_at, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: AnnotAt.PubSub},
