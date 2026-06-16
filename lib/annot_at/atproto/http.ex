@@ -9,6 +9,7 @@ defmodule AnnotAt.Atproto.HTTP do
   """
 
   @receive_timeout 10_000
+  @type body :: nil | {:json, map()} | {:raw, binary(), String.t()}
 
   @doc """
   GETs `url`, required a 2xx response, and decodes the body as a JSON object.
@@ -65,14 +66,14 @@ defmodule AnnotAt.Atproto.HTTP do
   end
 
   @doc """
-  Performs an HTTP request with the given method, headers, and optional JSON
+  Performs an HTTP request with the given method, headers, and optional
   body, returning the raw status, body, and response headers.
   """
-  @spec request(String.t(), String.t(), [{String.t(), String.t()}], map() | nil) ::
+  @spec request(String.t(), String.t(), [{String.t(), String.t()}], body()) ::
           {:ok,
            %{status: pos_integer(), body: binary(), headers: %{optional(binary()) => [binary()]}}}
           | {:error, {:transport, term()}}
-  def request(method, url, headers, json_body \\ nil) do
+  def request(method, url, headers, body \\ nil) do
     options = [
       method: method_atom(method),
       url: url,
@@ -81,16 +82,9 @@ defmodule AnnotAt.Atproto.HTTP do
       receive_timeout: @receive_timeout
     ]
 
-    options =
-      if json_body do
-        Keyword.put(options, :json, json_body)
-      else
-        options
-      end
-
-    case Req.request(options) do
-      {:ok, %Req.Response{status: status, body: body, headers: resp_headers}} ->
-        {:ok, %{status: status, body: body, headers: resp_headers}}
+    case Req.request(put_body(options, body)) do
+      {:ok, %Req.Response{status: status, body: resp_body, headers: resp_headers}} ->
+        {:ok, %{status: status, body: resp_body, headers: resp_headers}}
 
       {:error, reason} ->
         {:error, {:transport, reason}}
@@ -106,5 +100,14 @@ defmodule AnnotAt.Atproto.HTTP do
       {:ok, %Req.Response{status: status}} -> {:error, {:http_status, status}}
       {:error, reason} -> {:error, {:transport, reason}}
     end
+  end
+
+  defp put_body(options, nil), do: options
+  defp put_body(options, {:json, json}), do: Keyword.put(options, :json, json)
+
+  defp put_body(options, {:raw, body, content_type}) do
+    options
+    |> Keyword.put(:body, body)
+    |> Keyword.update!(:headers, &[{"content-type", content_type} | &1])
   end
 end

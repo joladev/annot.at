@@ -18,20 +18,37 @@ defmodule AnnotAt.Atproto.OAuth.Client do
 
   @refresh_buffer_seconds 60
 
+  @type error ::
+          :no_session
+          | :refresh_failed
+          | :missing_dpop_nonce
+          | :invalid_json
+          | {:transport, term()}
+          | {:xrpc_error, pos_integer(), map()}
+
   @doc """
   Performs an authenticated XRPC query for the user, refreshing if needed.
   """
-  @spec query(integer(), String.t(), keyword()) ::
-          {:ok, map()}
-          | {:error,
-             :no_session
-             | :refresh_failed
-             | :missing_dpop_nonce
-             | :invalid_json
-             | {:transport, term()}
-             | {:xrpc_error, pos_integer(), map()}}
+  @spec query(integer(), String.t(), keyword()) :: {:ok, map()} | {:error, error()}
   def query(user_id, method, params \\ []) do
     call(user_id, fn session -> XRPC.query(session, method, params) end)
+  end
+
+  @doc """
+  Performs and authenticated XRPC procedure for user, refreshing if needed.
+  """
+  @spec procedure(integer(), String.t(), map()) :: {:ok, map()} | {:error, error()}
+  def procedure(user_id, method, body) do
+    call(user_id, fn session -> XRPC.procedure(session, method, body) end)
+  end
+
+  @doc """
+  Uploads a blob for the user, refreshing if needed. Returns the response
+  containing the blob reference.
+  """
+  @spec upload_blob(integer(), binary(), String.t()) :: {:ok, map()} | {:error, error()}
+  def upload_blob(user_id, bytes, content_type) do
+    call(user_id, fn session -> XRPC.upload_blob(session, bytes, content_type) end)
   end
 
   defp call(user_id, fun) do

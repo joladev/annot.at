@@ -75,6 +75,20 @@ defmodule AnnotAt.Atproto.OAuth.ClientTest do
     assert {:error, :no_session} = Client.query(user.id, "app.bsky.actor.getProfile")
   end
 
+  test "procedure/3 calls through with a fresh session" do
+    user = create_user(future())
+    body = %{"text" => "hi"}
+
+    expect(XRPC, :procedure, fn %Session{access_token: "access-old"},
+                                "com.atproto.repo.createRecord",
+                                ^body ->
+      {:ok, %{"uri" => "at://x"}}
+    end)
+
+    assert {:ok, %{"uri" => "at://x"}} =
+             Client.procedure(user.id, "com.atproto.repo.createRecord", body)
+  end
+
   defp create_user(expires_at) do
     {:ok, user} =
       Accounts.upsert_login(

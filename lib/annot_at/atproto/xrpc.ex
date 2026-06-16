@@ -31,6 +31,28 @@ defmodule AnnotAt.Atproto.XRPC do
     )
   end
 
+  @doc """
+  Performs and authenticated XRPC procedure against the session's PDS.
+  """
+  @spec procedure(Session.t(), String.t(), map()) :: {:ok, map()} | {:error, error()}
+  def procedure(%Session{} = session, method, body) do
+    request(session, "POST", session.pds_endpoint <> "/xrpc/" <> method, {:json, body})
+  end
+
+  @doc """
+  Uploads raw bytes of content_type as a blob, returning the response with
+  the blog reference.
+  """
+  @spec upload_blob(Session.t(), binary(), String.t()) :: {:ok, map()} | {:error, error()}
+  def upload_blob(%Session{} = session, bytes, content_type) do
+    request(
+      session,
+      "POST",
+      session.pds_endpoint <> "/xrpc/com.atproto.repo.uploadBlob",
+      {:raw, bytes, content_type}
+    )
+  end
+
   defp request(%Session{} = session, http_method, url, body, nonce \\ nil) do
     proof =
       DPoP.proof(session.dpop_key, http_method, url,

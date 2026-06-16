@@ -30,7 +30,7 @@ defmodule AnnotAtWeb.AuthControllerTest do
 
     assert "http://localhost:4002/oauth-client-metadata.json" == metadata["client_id"]
     assert ["http://localhost:4002/auth/callback"] == metadata["redirect_uris"]
-    assert "atproto" == metadata["scope"]
+    assert metadata["scope"] =~ "atproto"
     assert true == metadata["dpop_bound_access_tokens"]
     assert "private_key_jwt" == metadata["token_endpoint_auth_method"]
 

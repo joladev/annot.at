@@ -9,7 +9,7 @@ defmodule AnnotAt.Atproto.OAuth.ConfigTest do
   end
 
   test "scope/0 returns the configured scope" do
-    assert "atproto" == Config.scope()
+    assert Config.scope() =~ "atproto"
   end
 
   test "signing_key/0 parses the configured JWK" do

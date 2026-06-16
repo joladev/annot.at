@@ -6,6 +6,7 @@ defmodule AnnotAt.Atproto.XRPCTest do
   alias AnnotAt.Atproto.OAuth.Session
   alias AnnotAt.Atproto.XRPC
 
+  @did "did:plc:ewvi7nxzyoun6zhxrhs64oiz"
   @pds "https://shaggymane.us-west.host.bsky.network"
 
   setup do
@@ -90,5 +91,45 @@ defmodule AnnotAt.Atproto.XRPCTest do
     end)
 
     assert {:error, :missing_dpop_nonce} = XRPC.query(session, "app.bsky.actor.getProfile")
+  end
+
+  test "procedure/3 sends an authenticated POST with a JSON body", %{session: session} do
+    body = %{"repo" => @did, "collection" => "app.bsky.feed.post", "record" => %{"text" => "hi"}}
+
+    expect(HTTP, :request, fn "POST", url, headers, {:json, ^body} ->
+      assert "#{@pds}/xrpc/com.atproto.repo.createRecord" == url
+      assert {"authorization", "DPoP access-1"} in headers
+
+      {"dpop", proof} = List.keyfind(headers, "dpop", 0)
+      %JOSE.JWT{fields: claims} = JOSE.JWT.peek_payload(proof)
+      assert "POST" == claims["htm"]
+      assert claims["ath"]
+
+      {:ok, %{status: 200, body: ~s({"uri":"at://x"}), headers: %{}}}
+    end)
+
+    assert {:ok, %{"uri" => "at://x"}} =
+             XRPC.procedure(session, "com.atproto.repo.createRecord", body)
+  end
+
+  test "upload_blob/3 POSTs raw bytes with a content type and returns the blob", %{
+    session: session
+  } do
+    bytes = <<137, 80, 78, 71>>
+
+    expect(HTTP, :request, fn "POST", url, headers, {:raw, ^bytes, "image/png"} ->
+      assert "#{@pds}/xrpc/com.atproto.repo.uploadBlob" == url
+      assert {"authorization", "DPoP access-1"} in headers
+
+      {"dpop", proof} = List.keyfind(headers, "dpop", 0)
+      %JOSE.JWT{fields: claims} = JOSE.JWT.peek_payload(proof)
+      assert "POST" == claims["htm"]
+      assert claims["ath"]
+
+      {:ok, %{status: 200, body: ~s({"blob":{"$type":"blob"}}), headers: %{}}}
+    end)
+
+    assert {:ok, %{"blob" => %{"$type" => "blob"}}} =
+             XRPC.upload_blob(session, bytes, "image/png")
   end
 end
