@@ -61,7 +61,17 @@ config :logger, :default_formatter,
 config :phoenix, :json_library, Jason
 
 config :annot_at, AnnotAt.Atproto.OAuth.Config,
-  scope: "atproto",
+  scope:
+    Enum.join(
+      [
+        "atproto",
+        "repo:site.standard.publication",
+        "repo:site.standard.document",
+        "repo:app.bsky.feed.post",
+        "blob:image/*"
+      ],
+      " "
+    ),
   signing_jwk:
     ~s({"crv":"P-256","d":"h0MvqcXLcKqWZFnqUCAuc6Bmt6gGzj5F5sFOCaUD4Jw","kty":"EC","x":"u0_K5EPDBIlGVp_rUUKucDviS-Owhiv4jnpMCeI7ojY","y":"v_XGrdUIww1wsRA7TUqMWIAJXmi2V8mnoF24Vg5OkvQ"})
 
