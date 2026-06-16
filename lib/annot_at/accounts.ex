@@ -108,4 +108,22 @@ defmodule AnnotAt.Accounts do
     {count, _} = Repo.delete_all(from(r in OAuthLoginRequest, where: r.inserted_at < ^cutoff))
     count
   end
+
+  @doc """
+  Runs fun with a user and their atproto session under a `FOR UPDATE` row
+  lock, inside a transaction. How we do token refresh.
+  """
+  @spec with_locked_session(integer(), (User.t(), AtprotoSession.t() ->
+                                          {:ok, term()} | {:error, term()})) :: term()
+  def with_locked_session(user_id, fun) do
+    Repo.transact(fn ->
+      query =
+        from(s in AtprotoSession, where: s.user_id == ^user_id, lock: "FOR UPDATE")
+
+      case Repo.one(query) do
+        nil -> {:error, :no_session}
+        atproto_session -> fun.(get_user!(user_id), atproto_session)
+      end
+    end)
+  end
 end

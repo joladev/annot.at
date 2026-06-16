@@ -69,6 +69,25 @@ defmodule AnnotAt.Atproto.OAuth.DPoP do
     PKCE.challenge(access_token)
   end
 
+  @doc """
+  Serializes a JWK to a JSON string for storage and whatnot.
+  """
+  @spec dump(JOSE.JWK.t()) :: String.t()
+  def dump(jwk) do
+    {_, map} = JOSE.JWK.to_map(jwk)
+    Jason.encode!(map)
+  end
+
+  @doc """
+  Deserializes a JWK from a JSON string.
+  """
+  @spec load(String.t()) :: JOSE.JWK.t()
+  def load(json) do
+    json
+    |> Jason.decode!()
+    |> JOSE.JWK.from()
+  end
+
   defp htu(url) do
     url
     |> URI.parse()

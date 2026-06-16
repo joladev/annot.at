@@ -114,7 +114,7 @@ defmodule AnnotAt.Atproto.OAuth.Login do
       pds_host: identity.pds_endpoint,
       auth_server_issuer: server.issuer,
       pkce_verifier: verifier,
-      dpop_private_jwk: dump_jwk(dpop_key)
+      dpop_private_jwk: DPoP.dump(dpop_key)
     })
   end
 
@@ -145,7 +145,7 @@ defmodule AnnotAt.Atproto.OAuth.Login do
       redirect_uri: Config.redirect_uri(),
       code: code,
       code_verifier: request.pkce_verifier,
-      dpop_key: load_jwk(request.dpop_private_jwk),
+      dpop_key: DPoP.load(request.dpop_private_jwk),
       expected_did: request.did,
       pds_endpoint: request.pds_host
     )
@@ -168,21 +168,10 @@ defmodule AnnotAt.Atproto.OAuth.Login do
         granted_scopes: session.scope,
         access_token: session.access_token,
         refresh_token: session.refresh_token,
-        dpop_private_jwk: dump_jwk(session.dpop_key),
+        dpop_private_jwk: DPoP.dump(session.dpop_key),
         expires_at: session.expires_at
       }
     )
-  end
-
-  defp dump_jwk(jwk) do
-    {_, map} = JOSE.JWK.to_map(jwk)
-    Jason.encode!(map)
-  end
-
-  defp load_jwk(json) do
-    json
-    |> Jason.decode!()
-    |> JOSE.JWK.from()
   end
 
   defp random_state do
