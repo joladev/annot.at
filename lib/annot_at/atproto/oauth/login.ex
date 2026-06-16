@@ -16,6 +16,7 @@ defmodule AnnotAt.Atproto.OAuth.Login do
   alias AnnotAt.Atproto.OAuth.DPoP
   alias AnnotAt.Atproto.OAuth.Flow
   alias AnnotAt.Atproto.OAuth.PKCE
+  alias AnnotAt.Atproto.Profile
 
   require Logger
 
@@ -151,12 +152,16 @@ defmodule AnnotAt.Atproto.OAuth.Login do
   end
 
   defp persist(request, session) do
+    profile = fetch_profile(request.handle)
+
     Accounts.upsert_login(
       %{
         did: session.did,
         handle: request.handle,
         pds_host: session.pds_endpoint,
-        handle_verified_at: DateTime.utc_now(:second)
+        handle_verified_at: DateTime.utc_now(:second),
+        display_name: profile.display_name,
+        avatar_url: profile.avatar_url
       },
       %{
         auth_server_issuer: session.issuer,
@@ -191,4 +196,15 @@ defmodule AnnotAt.Atproto.OAuth.Login do
 
   defp callback_error(:invalid_state), do: :invalid_state
   defp callback_error(_reason), do: :login_failed
+
+  defp fetch_profile(handle) do
+    case Profile.fetch(handle) do
+      {:ok, profile} ->
+        profile
+
+      {:error, reason} ->
+        Logger.warning("failed to fetch profile for #{handle}: #{inspect(reason)}")
+        %{display_name: nil, avatar: nil}
+    end
+  end
 end

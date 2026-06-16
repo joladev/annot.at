@@ -10,6 +10,7 @@ defmodule AnnotAt.Atproto.OAuth.LoginTest do
   alias AnnotAt.Atproto.OAuth.Login
   alias AnnotAt.Atproto.OAuth.ServerMetadata
   alias AnnotAt.Atproto.OAuth.Session
+  alias AnnotAt.Atproto.Profile
 
   @did "did:plc:ewvi7nxzyoun6zhxrhs64oiz"
   @pds "https://enoki.us-east.host.bsky.network"
@@ -82,10 +83,16 @@ defmodule AnnotAt.Atproto.OAuth.LoginTest do
       expect(Discovery, :discover, fn @pds -> {:ok, server} end)
       expect(Flow, :exchange_code, fn ^server, _opts -> {:ok, session} end)
 
+      expect(Profile, :fetch, fn "jola.dev" ->
+        {:ok, %{display_name: "Johanna", avatar_url: "https://cdn/av.jpg"}}
+      end)
+
       params = %{"code" => "code-1", "state" => "state-1", "iss" => @issuer}
       assert {:ok, user} = Login.complete_login(params)
 
       assert @did == user.did
+      assert "Johanna" == user.display_name
+      assert "https://cdn/av.jpg" == user.avatar_url
       assert "access-1" == user.atproto_session.access_token
       refute Accounts.take_login_request("state-1")
     end

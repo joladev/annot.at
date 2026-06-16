@@ -64,6 +64,42 @@ defmodule AnnotAt.Atproto.HTTP do
     end
   end
 
+  @doc """
+  Performs an HTTP request with the given method, headers, and optional JSON
+  body, returning the raw status, body, and response headers.
+  """
+  @spec request(String.t(), String.t(), [{String.t(), String.t()}], map() | nil) ::
+          {:ok,
+           %{status: pos_integer(), body: binary(), headers: %{optional(binary()) => [binary()]}}}
+          | {:error, {:transport, term()}}
+  def request(method, url, headers, json_body \\ nil) do
+    options = [
+      method: method_atom(method),
+      url: url,
+      headers: headers,
+      decode_body: false,
+      receive_timeout: @receive_timeout
+    ]
+
+    options =
+      if json_body do
+        Keyword.put(options, :json, json_body)
+      else
+        options
+      end
+
+    case Req.request(options) do
+      {:ok, %Req.Response{status: status, body: body, headers: resp_headers}} ->
+        {:ok, %{status: status, body: body, headers: resp_headers}}
+
+      {:error, reason} ->
+        {:error, {:transport, reason}}
+    end
+  end
+
+  defp method_atom("GET"), do: :get
+  defp method_atom("POST"), do: :post
+
   defp get_body(url) when is_binary(url) do
     case Req.get(url, decode_body: false, receive_timeout: @receive_timeout) do
       {:ok, %Req.Response{status: status, body: body}} when status in 200..299 -> {:ok, body}

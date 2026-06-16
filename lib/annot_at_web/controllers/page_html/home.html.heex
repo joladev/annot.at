@@ -3,8 +3,14 @@
     <h1 class="text-3xl font-bold">annot.at</h1>
 
     <%= if @current_scope do %>
-      <p>Signed in as <span class="font-semibold">{@current_scope.user.handle}</span></p>
-      <p class="text-sm opacity-70">{@current_scope.user.did}</p>
+      <%= if @current_scope.user.avatar_url do %>
+        <img src={@current_scope.user.avatar_url} alt="" class="mx-auto h-20 w-20 rounded-full" />
+      <% end %>
+      <p class="text-lg font-semibold">
+        {@current_scope.user.display_name || @current_scope.user.handle}
+      </p>
+      <p class="opacity-80">{@current_scope.user.handle}</p>
+      <p class="text-sm opacity-60">{@current_scope.user.did}</p>
       <.link href={~p"/logout"} method="delete" class="underline">Log out</.link>
     <% else %>
       <.link navigate={~p"/login"} class="underline">Sign in with Bluesky</.link>
