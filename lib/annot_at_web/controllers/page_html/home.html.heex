@@ -1,19 +1,295 @@
-<Layouts.app flash={@flash} current_scope={@current_scope}>
-  <div class="mx-auto max-w-md space-y-6 py-16 text-center">
-    <h1 class="text-3xl font-bold">annot.at</h1>
+<Layouts.app flash={@flash}>
+  <div id="top" class="font-sans">
+    <%!-- Nav --%>
+    <nav class="sticky top-0 z-50 border-b border-ink/5 bg-paper/80 backdrop-blur-md">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <a href="#top" class="font-display text-xl font-bold tracking-tight">annot.at</a>
+        <div class="flex items-center gap-6">
+          <a href="#how" class="hidden text-sm text-ink/70 transition hover:text-ink sm:inline">
+            How it works
+          </a>
+          <a
+            href="#features"
+            class="hidden text-sm text-ink/70 transition hover:text-ink sm:inline"
+          >
+            Features
+          </a>
+          <a href="#faq" class="hidden text-sm text-ink/70 transition hover:text-ink sm:inline">
+            FAQ
+          </a>
+          <.link
+            href={~p"/login"}
+            class="rounded-xl bg-ink px-4 py-2 text-sm font-bold text-paper transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Sign in
+          </.link>
+        </div>
+      </div>
+    </nav>
 
-    <%= if @current_scope do %>
-      <%= if @current_scope.user.avatar_url do %>
-        <img src={@current_scope.user.avatar_url} alt="" class="mx-auto h-20 w-20 rounded-full" />
-      <% end %>
-      <p class="text-lg font-semibold">
-        {@current_scope.user.display_name || @current_scope.user.handle}
-      </p>
-      <p class="opacity-80">{@current_scope.user.handle}</p>
-      <p class="text-sm opacity-60">{@current_scope.user.did}</p>
-      <.link href={~p"/logout"} method="delete" class="underline">Log out</.link>
-    <% else %>
-      <.link navigate={~p"/login"} class="underline">Sign in with Bluesky</.link>
-    <% end %>
+    <main class="mx-auto max-w-6xl px-6">
+      <%!-- Hero --%>
+      <section class="grid grid-cols-1 items-center gap-12 py-16 lg:grid-cols-12 lg:py-24">
+        <div class="animate-entrance lg:col-span-7">
+          <span class="inline-block rounded-full bg-peach-light px-3 py-1 text-xs font-semibold uppercase tracking-widest text-ink">
+            standard.site lexicon
+          </span>
+          <h1 class="mt-6 font-display text-5xl font-bold leading-[0.9] tracking-tight sm:text-6xl lg:text-8xl">
+            Your blog,<br />
+            <span class="italic text-sky-bold">published</span> <br /> to the ATmosphere.
+          </h1>
+          <p class="mt-8 max-w-xl text-lg leading-relaxed text-ink/70">
+            annot.at watches your RSS feed and publishes every new post to atproto
+            using the standard.site lexicon, so readers across Leaflet, pckt.blog,
+            Offprint, and any other ATmosphere reader can find it.
+          </p>
+          <div class="mt-10 flex flex-wrap gap-4">
+            <.link
+              href={~p"/login"}
+              class="rounded-2xl bg-ink px-8 py-4 text-lg font-bold text-paper shadow-xl shadow-ink/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Sign in with atproto
+            </.link>
+            <a
+              href="https://tangled.sh"
+              class="rounded-2xl border-2 border-ink/10 px-8 py-4 text-lg font-bold text-ink transition-colors hover:bg-sky-light/30"
+            >
+              View on tangled.sh
+            </a>
+          </div>
+        </div>
+
+        <div class="animate-float lg:col-span-5">
+          <div class="rounded-[2.5rem_1.5rem_4rem_2rem] border-2 border-ink bg-sky-light p-6 shadow-[12px_12px_0px_0px_var(--color-sky-bold)]">
+            <div class="mb-4 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="h-7 w-7 rounded-full border border-ink/20 bg-peach-bold"></div>
+                <div class="font-mono text-[11px] leading-tight text-ink/70">
+                  <div class="font-bold text-ink">field notes</div>
+                  <div>@fieldnotes.example.com</div>
+                </div>
+              </div>
+              <span class="rotate-[4deg] rounded-full border border-ink/10 bg-peach-bold px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-ink">
+                live
+              </span>
+            </div>
+
+            <div class="mb-3 font-mono text-[10px] uppercase tracking-widest text-ink/40">
+              site.standard.document · 3 recent
+            </div>
+
+            <div class="space-y-2">
+              <article
+                :for={
+                  {title, desc, time} <- [
+                    {"Notes on writing in public",
+                     "Why I started publishing the rough drafts too.", "just now"},
+                    {"A small garden of ideas", "Tending a personal wiki across the ATmosphere.",
+                     "2d ago"},
+                    {"RSS is still the best protocol",
+                     "And how annot.at quietly bridges it to atproto.", "1w ago"}
+                  ]
+                }
+                class="rounded-xl border border-ink/10 bg-paper p-3"
+              >
+                <div class="text-sm font-semibold text-ink">{title}</div>
+                <div class="mt-0.5 text-xs text-ink/60">{desc}</div>
+                <div class="mt-2 flex items-center justify-between font-mono text-[10px] text-ink/40">
+                  <span>published to atproto</span>
+                  <span>{time}</span>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <%!-- Bluesky previews --%>
+      <section class="py-8 lg:py-12">
+        <div class="flex flex-col items-start gap-8 rounded-[1.5rem] bg-ink p-8 text-paper lg:flex-row lg:items-center lg:gap-12 lg:p-12">
+          <div class="lg:flex-1">
+            <h2 class="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+              Shared anywhere, signed by you.
+            </h2>
+            <p class="mt-4 max-w-md leading-relaxed text-paper/70">
+              Post a link on Bluesky and it reads your standard.site records, turning a bare URL
+              into a branded preview with your publication and a button straight back to your site.
+            </p>
+          </div>
+
+                     <div class="flex w-full flex-col gap-3 rounded-2xl border-2 border-ink bg-paper p-3 text-ink shadow-[6px_6px_0px_0px_var(--color-sky-bold)] lg:w-auto lg:flex-row lg:items-center">
+            <div class="flex min-w-0 items-center gap-3">
+              <div class="grid h-10 w-10 flex-none place-items-center rounded-xl border border-ink/15 bg-peach-bold font-display text-lg font-bold">
+                F
+              </div>
+              <div class="min-w-0">
+                <div class="font-bold leading-tight">Field Notes</div>
+                <div class="truncate text-sm text-ink/60">by @fieldnotes.example.com</div>
+              </div>
+            </div>
+            <span class="flex items-center justify-center gap-1 whitespace-nowrap rounded-full bg-ink px-4 py-2 text-sm font-bold text-paper lg:ml-auto">
+              View publication
+              <.icon name="hero-arrow-up-right" class="size-4" />
+            </span>
+          </div>
+
+
+        </div>
+      </section>
+
+
+      <%!-- Steps --%>
+      <section id="how" class="py-16 lg:py-24">
+        <div class="text-center">
+          <h2 class="font-display text-4xl font-bold tracking-tight sm:text-5xl">
+            Three steps to reach the ATmosphere
+          </h2>
+          <p class="mt-3 text-ink/60">Minimal setup. No extra writing.</p>
+        </div>
+
+        <div class="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3 items-start">
+          <div class="rounded-2xl border border-ink/10 bg-peach-light p-8 shadow-sm transition-transform md:rotate-[-1deg] hover:rotate-0">
+            <div class="font-display text-4xl font-bold text-ink/25">01</div>
+            <h3 class="mt-4 text-xl font-bold">Connect your atproto account</h3>
+            <p class="mt-3 text-sm leading-relaxed text-ink/70">
+              Sign in once with your handle (any PDS, Bluesky included). We only ask
+              permission to write standard.site records on your behalf.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-ink/10 bg-sky-light p-8 shadow-sm transition-transform md:mt-8 md:rotate-[1.5deg] hover:rotate-0">
+            <div class="font-display text-4xl font-bold text-ink/25">02</div>
+            <h3 class="mt-4 text-xl font-bold">Point us at your blog</h3>
+            <p class="mt-3 text-sm leading-relaxed text-ink/70">
+              Register your publication: RSS or Atom URL plus the canonical URL of
+              your blog. We create your site.standard.publication record.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-ink/10 bg-paper p-8 shadow-sm transition-transform md:rotate-[-0.5deg] hover:rotate-0">
+            <div class="font-display text-4xl font-bold text-ink/25">03</div>
+            <h3 class="mt-4 text-xl font-bold">Write as usual</h3>
+            <p class="mt-3 text-sm leading-relaxed text-ink/70">
+              Every time your feed updates, we publish a site.standard.document to
+              your PDS so it lands in standard.site readers across the ATmosphere.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <%!-- Features --%>
+      <section id="features" class="py-16 lg:py-24">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
+          <div class="rounded-[1.5rem] bg-ink p-8 text-paper md:col-span-2">
+            <h3 class="font-display text-3xl font-bold">We watch your RSS.</h3>
+            <p class="mt-4 leading-relaxed text-paper/70">
+              annot.at polls your feed every few minutes. New posts become atproto
+              records on your PDS within minutes of going live on your blog.
+            </p>
+          </div>
+          <div class="rounded-[1.5rem] bg-peach-bold p-8 text-ink">
+            <h3 class="font-display text-xl font-bold">standard.site native</h3>
+            <p class="mt-3 text-sm leading-relaxed text-ink/80">
+              Built on the community lexicons maintained by the Leaflet, pckt.blog,
+              and Offprint teams. No custom schema, no lock-in.
+            </p>
+          </div>
+          <div class="rounded-[1.5rem] bg-sky-bold p-8 text-ink">
+            <h3 class="font-display text-xl font-bold">Free for basics, forever</h3>
+            <p class="mt-3 text-sm leading-relaxed text-ink/80">
+              annot.at's reason to exist is just to support the community, personal blogs, and
+              small communities. Self-host or use our hosted service for free.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-col items-start justify-between gap-6 rounded-[1.5rem] border border-ink/10 p-8 md:flex-row md:items-center">
+          <div>
+            <h3 class="font-display text-xl font-bold">Built in public.</h3>
+            <p class="mt-2 text-sm text-ink/70">
+              annot.at is open source. Self-host it on a small VPS if you'd rather run it yourself.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <a
+              href="#"
+              class="rounded-xl border border-ink bg-paper px-6 py-3 text-sm font-bold transition-colors hover:bg-peach-light"
+            >
+              Docs
+            </a>
+            <a
+              href="https://github.com/joladev/annot.at"
+              class="rounded-xl border border-ink bg-paper px-6 py-3 text-sm font-bold transition-colors hover:bg-peach-light"
+            >
+              GitHub
+            </a>
+            <a
+              href="https://tangled.org/jola.dev/annot.at"
+              class="rounded-xl border border-ink bg-paper px-6 py-3 text-sm font-bold transition-colors hover:bg-peach-light"
+            >
+              tangled.sh
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <%!-- FAQ --%>
+      <section id="faq" class="mx-auto max-w-3xl py-16 lg:py-24">
+        <h2 class="text-center font-display text-4xl font-bold tracking-tight sm:text-5xl">
+          Questions?
+        </h2>
+        <div class="mt-10">
+          <details
+            :for={
+              {q, a} <- [
+                {"What is standard.site?",
+                 "A set of open AT Protocol lexicons for publications and documents. Publishing to them turns your posts into portable records that any ATmosphere reader, like Leaflet or pckt.blog, can pick up."},
+                {"Will my posts show up on Bluesky?",
+                 "Not automatically. annot.at writes standard.site records to your repo. Bluesky cross-posting is a separate, opt-in step you can enable later."},
+                {"Which RSS feeds work?",
+                 "Any standard RSS or Atom feed. Point us at your feed URL plus your blog's canonical URL and we handle the rest."},
+                {"Do I keep ownership of my posts?",
+                 "Yes. Records live in your own PDS under your DID. annot.at only holds permission to write them, and you can revoke it or self-host anytime."},
+                {"Can I self-host?",
+                 "Yes. annot.at is open source. Run it on a small VPS if you'd rather operate it yourself."}
+              ]
+            }
+            class="group border-b border-ink/10 py-5"
+          >
+            <summary class="flex cursor-pointer list-none items-center justify-between text-lg font-semibold [&::-webkit-details-marker]:hidden">
+              {q}
+              <span class="text-2xl text-ink/40 transition-transform group-open:rotate-45">
+                +
+              </span>
+            </summary>
+            <p class="mt-3 text-ink/70">{a}</p>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <%!-- Footer --%>
+    <footer class="border-t border-ink/10">
+      <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-12 sm:flex-row">
+        <span class="font-display text-lg font-bold">annot.at</span>
+        <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-ink/60">
+          <a
+            href="https://tangled.org/jola.dev/annot.at/blob/main/README.md"
+            class="transition hover:text-ink"
+          >
+            Docs
+          </a>
+          <a href="https://github.com/joladev/annot.at" class="transition hover:text-ink">
+            GitHub
+          </a>
+          <a href="https://tangled.org/jola.dev/annot.ath" class="transition hover:text-ink">
+            tangled.sh
+          </a>
+          <a href="https://standard.site" class="transition hover:text-ink">standard.site</a>
+          <a href="#" class="transition hover:text-ink">Privacy</a>
+        </div>
+        <span class="font-mono text-xs uppercase tracking-widest text-ink/40">
+          Built in the open for the ATmosphere
+        </span>
+      </div>
+    </footer>
   </div>
 </Layouts.app>
