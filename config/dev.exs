@@ -17,7 +17,7 @@ config :annot_at, AnnotAt.Repo,
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
 config :annot_at, AnnotAtWeb.Endpoint,
-  # url: [host: "tlaloc.haddock-carp.ts.net", scheme: "https", port: 443],
+  # url: [host: "machine.random-thing.ts.net", scheme: "https", port: 443],
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {127, 0, 0, 1}],
