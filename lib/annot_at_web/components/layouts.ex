@@ -44,6 +44,116 @@ defmodule AnnotAtWeb.Layouts do
   end
 
   @doc """
+  The authenticated dashboard shell: sidebar nav + main content slot.
+  """
+  attr :flash, :map, required: true
+  attr :current_scope, :map, required: true
+  attr :active, :atom, default: :overview, doc: "the active nav item"
+  slot :inner_block, required: true
+
+  def dashboard(assigns) do
+    ~H"""
+    <div class="flex min-h-screen bg-paper text-ink">
+      <aside class="flex w-60 flex-none flex-col border-r-2 border-ink p-4">
+        <.link
+          navigate={~p"/dashboard"}
+          class="px-3 py-2 font-display text-xl font-bold tracking-tight"
+        >
+          annot.at
+        </.link>
+
+        <nav class="mt-4 flex flex-col gap-1">
+          <.dash_nav_item
+            navigate={~p"/dashboard"}
+            icon="hero-squares-2x2"
+            active={@active == :overview}
+          >
+            Overview
+          </.dash_nav_item>
+
+          <div class="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase tracking-widest text-ink/40">
+            Publish
+          </div>
+          <.dash_nav_item icon="hero-globe-alt">Sites</.dash_nav_item>
+          <.dash_nav_item icon="hero-document-text">Posts</.dash_nav_item>
+
+          <div class="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase tracking-widest text-ink/40">
+            Account
+          </div>
+          <.dash_nav_item icon="hero-cog-6-tooth">Settings</.dash_nav_item>
+        </nav>
+
+        <div class="mt-auto border-t-2 border-ink/10 pt-3">
+          <div class="flex items-center gap-3 px-3 py-2">
+            <img
+              :if={@current_scope.user.avatar_url}
+              src={@current_scope.user.avatar_url}
+              alt=""
+              class="size-9 flex-none rounded-full border-2 border-ink"
+            />
+            <div
+              :if={!@current_scope.user.avatar_url}
+              class="size-9 flex-none rounded-full border-2 border-ink bg-gradient-to-br from-sky-bold to-peach-bold"
+            />
+            <div class="min-w-0">
+              <div class="truncate text-sm font-bold leading-tight">
+                {@current_scope.user.display_name || @current_scope.user.handle}
+              </div>
+              <div class="truncate text-xs text-ink/55">{"@" <> @current_scope.user.handle}</div>
+            </div>
+          </div>
+          <.link
+            href={~p"/logout"}
+            method="delete"
+            class="block px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-ink/45 hover:text-ink"
+          >
+            Sign out
+          </.link>
+        </div>
+      </aside>
+
+      <main class="flex-1 px-6 py-8 sm:px-10">
+        {render_slot(@inner_block)}
+      </main>
+    </div>
+
+    <.flash_group flash={@flash} />
+    """
+  end
+
+  attr :icon, :string, required: true
+  attr :active, :boolean, default: false
+  attr :navigate, :string, default: nil
+  slot :inner_block, required: true
+
+  defp dash_nav_item(%{navigate: nil} = assigns) do
+    ~H"""
+    <span class="flex cursor-default items-center gap-3 rounded-xl border-2 border-transparent px-3 py-2 text-sm font-semibold text-ink/35">
+      <.icon name={@icon} class="size-5" />
+      {render_slot(@inner_block)}
+    </span>
+    """
+  end
+
+  defp dash_nav_item(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      class={[
+        "flex items-center gap-3 rounded-xl border-2 px-3 py-2 text-sm font-semibold transition",
+        if(@active,
+          do: "border-ink bg-peach-bold text-ink",
+          else: "border-transparent text-ink/65 hover:bg-ink/5"
+        )
+      ]}
+    >
+      <.icon name={@icon} class="size-5" />
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  @doc """
   Shows the flash group with standard titles and content.
 
   ## Examples

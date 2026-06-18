@@ -1,16 +1,47 @@
 <Layouts.app flash={@flash} current_scope={@current_scope}>
-  <div class="mx-auto max-w-sm space-y-6 py-12">
-    <h1 class="text-2xl font-semibold">Sign in with Bluesky</h1>
+  <div class="flex min-h-screen flex-col items-center justify-center px-6 py-12">
+    <.link href={~p"/"} class="mb-8 font-display text-2xl font-bold tracking-tight">
+      annot.at
+    </.link>
 
-    <.form for={%{}} action={~p"/login"} method="post" id="login-form" class="space-y-4">
-      <.input
-        name="handle"
-        value={@handle}
-        label="Handle"
-        placeholder="alice.bsky.social"
-        required
-      />
-      <.button class="w-full">Continue</.button>
-    </.form>
+    <div class="w-full max-w-sm -rotate-1 rounded-3xl border-2 border-ink bg-paper p-8 shadow-[10px_10px_0px_0px_var(--color-sky-bold)] transition-transform focus-within:rotate-0">
+      <h1 class="font-display text-3xl font-bold tracking-tight">Sign in</h1>
+      <p class="mt-2 text-sm text-ink/60">
+        Enter your atproto handle to publish to the ATmosphere.
+      </p>
+
+      <.form for={%{}} action={~p"/login"} method="post" id="login-form" class="mt-6 space-y-4">
+        <div>
+          <label for="handle" class="mb-1.5 block text-sm font-bold">Handle</label>
+          <input
+            type="text"
+            name="handle"
+            id="handle"
+            value={@handle}
+            placeholder="alice.bsky.social"
+            required
+            autofocus
+            autocapitalize="none"
+            autocorrect="off"
+            spellcheck="false"
+            class="w-full rounded-xl border-2 border-ink bg-paper px-4 py-3 placeholder:text-ink/35 focus:outline-none focus:ring-4 focus:ring-sky-bold/40"
+          />
+        </div>
+        <button
+          type="submit"
+          class="w-full rounded-xl bg-ink px-5 py-3 font-bold text-paper transition-all hover:scale-[1.01] active:scale-[0.99]"
+        >
+          Continue
+        </button>
+      </.form>
+
+      <p class="mt-5 text-center text-xs text-ink/50">
+        Any atproto handle works, Bluesky or your own domain.
+      </p>
+    </div>
+
+    <.link href={~p"/"} class="mt-8 text-sm text-ink/55 transition hover:text-ink">
+      ← Back to home
+    </.link>
   </div>
 </Layouts.app>

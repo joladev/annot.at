@@ -59,12 +59,12 @@ defmodule AnnotAtWeb.AuthControllerTest do
     assert html_response(conn, 200) =~ "valid handle"
   end
 
-  test "GET /auth/callback logs in and redirects home", %{conn: conn} do
+  test "GET /auth/callback logs in and redirects dashboard", %{conn: conn} do
     user = create_user()
     expect(Login, :complete_login, fn _ -> {:ok, user} end)
 
     conn = get(conn, "/auth/callback?code=c&state=s&iss=i")
-    assert ~p"/" == redirected_to(conn)
+    assert ~p"/dashboard" == redirected_to(conn)
     assert user.id == get_session(conn, :user_id)
   end
 
@@ -86,16 +86,5 @@ defmodule AnnotAtWeb.AuthControllerTest do
 
     assert ~p"/" == redirected_to(conn)
     refute get_session(conn, :user_id)
-  end
-
-  test "home shows the DID when signed in", %{conn: conn} do
-    user = create_user()
-
-    conn =
-      conn
-      |> init_test_session(%{user_id: user.id})
-      |> get(~p"/")
-
-    assert html_response(conn, 200) =~ @did
   end
 end

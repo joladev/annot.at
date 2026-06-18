@@ -18,14 +18,24 @@ defmodule AnnotAtWeb.Router do
   end
 
   scope "/", AnnotAtWeb do
-    pipe_through :browser
+    pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     get "/", PageController, :home
 
     get "/login", AuthController, :new
     post "/login", AuthController, :create
+  end
+
+  scope "/", AnnotAtWeb do
+    pipe_through :browser
+
     get "/auth/callback", AuthController, :callback
     delete "/logout", AuthController, :delete
+
+    live_session :authenticated,
+      on_mount: [{AnnotAtWeb.UserAuth, :require_authenticated}] do
+      live "/dashboard", DashboardLive
+    end
   end
 
   scope "/", AnnotAtWeb do
