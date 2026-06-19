@@ -4,9 +4,51 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
-    <.live_title default="annot.at · publish your blog to atproto" suffix=" · annot.at">
+
+    <.live_title default="publish your blog to atproto" suffix=" · annot.at">
       {assigns[:page_title]}
     </.live_title>
+    <!-- All the usual meta stuff -->
+    <meta
+      name="description"
+      content="annot.at watches your RSS feed and publishes every new post to atproto using the standard.site lexicon, so readers across Leaflet, pckt.blog, Offprint, and any other ATmosphere reader can find it."
+    />
+    <meta property="og:title" content="annot.at" />
+    <meta
+      property="og:description"
+      content="annot.at watches your RSS feed and publishes every new post to atproto using the standard.site lexicon, so readers across Leaflet, pckt.blog, Offprint, and any other ATmosphere reader can find it."
+    />
+    <meta property="og:image" content={~p"/assets/images/og_light.png"} />
+    <meta property="og:url" content={Phoenix.Controller.current_url(@conn)} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="annot.at" />
+    <!-- Twitter OG is special -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@annot_at" />
+    <meta name="twitter:creator" content="@annot_at" />
+    <meta name="twitter:title" content="annot.at" />
+    <meta
+      name="twitter:description"
+      content="annot.at watches your RSS feed and publishes every new post to atproto using the standard.site lexicon, so readers across Leaflet, pckt.blog, Offprint, and any other ATmosphere reader can find it."
+    />
+    <meta name="twitter:image" content={~p"/assets/images/og_light.png"} />
+
+    <!-- Just a little fun with preloading -->
+    <link
+      rel="preload"
+      href={~p"/fonts/plus-jakarta-sans-latin-wght-normal.woff2"}
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href={~p"/fonts/syne-latin-wght-normal.woff2"}
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>
