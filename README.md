@@ -26,3 +26,15 @@ Press Ctrl+C to exit.
 ```
 
 Make sure that same host is set in `dev.exs` and the app has been restarted. Click login and use any active atproto handle, and you should be able to OAuth against it.
+
+## Deploying
+
+You need to set up some env vars to run this service in a production environment, `SECRET_KEY_BASE`, `DATABASE_URL`, `HOST`, `CLOAK_KEY`, and `ATPROTO_CLIENT_PRIVATE_JWK`.
+
+- `SECRET_KEY_BASE` - run `mix phx.gen.secret 64` and copy the output
+- `DATABASE_URL` - a Postgres database URL like `postgresql://app:pass@db:5432/db_name`
+- `HOST` - a domain name like `annot.at`
+- `CLOAK_KEY` - run `mix run -e 'IO.puts(Base.encode64(:crypto.strong_rand_bytes(32)))'` and copy the output
+- `ATPROTO_CLIENT_PRIVATE_JWK` - run `mix run -e '{_, jwk} = JOSE.JWK.to_map(JOSE.JWK.generate_key({:ec, "P-256"})); IO.puts(Jason.encode!(jwk))'` and copy the output
+
+Note that `ATPROTO_CLIENT_PRIVATE_JWK`, `CLOAK_KEY`, and `SECRET_KEY_BASE` are secrets and should not be shared.
