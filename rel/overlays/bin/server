@@ -2,4 +2,5 @@
 set -eu
 
 cd -P -- "$(dirname -- "$0")"
+./annot_at eval AnnotAt.Release.migrate
 PHX_SERVER=true exec ./annot_at start
