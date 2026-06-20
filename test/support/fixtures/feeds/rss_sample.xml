@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Sample Blog</title>
+    <link>https://example.com</link>
+    <description>Thoughts about things.</description>
+    <image>
+      <url>https://example.com/icon.png</url>
+      <title>Sample Blog Logo</title>
+      <link>https://example.com</link>
+    </image>
+    <item>
+      <title>First Post</title>
+      <link>https://example.com/posts/first</link>
+      <guid>abc</guid>
+      <description>A short summary of the first post.</description>
+      <content:encoded
+            ><![CDATA[<p>The full <strong>content</strong> of the first post.</p>]]></content:encoded>
+      <pubDate>Wed, 02 Oct 2024 13:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Second Post</title>
+      <link>https://example.com/posts/second</link>
+      <description>Another summary.</description>
+    </item>
+  </channel>
+</rss>

@@ -3,6 +3,15 @@ defmodule AnnotAt.Accounts.User do
 
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{
+          did: String.t(),
+          handle: String.t(),
+          display_name: String.t(),
+          avatar_url: String.t(),
+          pds_host: String.t(),
+          handle_verified_at: DateTime.t()
+        }
+
   schema "users" do
     # Stable atproto identity from OAuth sub
     field :did, :string

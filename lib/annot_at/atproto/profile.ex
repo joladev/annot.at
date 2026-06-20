@@ -13,7 +13,6 @@ defmodule AnnotAt.Atproto.Profile do
   @spec fetch(String.t()) ::
           {:ok, %{display_name: String.t() | nil, avatar: String.t() | nil}}
           | {:error, {:http_status, pos_integer()} | {:transport, term()} | :invalid_json}
-
   def fetch(actor) do
     url = "#{@appview}/xrpc/app.bsky.actor.getProfile?#{URI.encode_query(actor: actor)}"
 
