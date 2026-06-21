@@ -5,15 +5,17 @@ defmodule AnnotAt.Atproto.StandardSite do
   """
 
   alias AnnotAt.Accounts
+  alias AnnotAt.Atproto.HTTP
   alias AnnotAt.Atproto.OAuth.Client
   alias AnnotAt.Atproto.StandardSite.Document
   alias AnnotAt.Atproto.StandardSite.Publication
 
   @publication "site.standard.publication"
   @document "site.standard.document"
+  @wellknown_path "/.well-known/site.standard.publication"
 
   @doc """
-  Creates or updates the user's publication record (one per repo, rkey `self`).
+  Creates or updates the user's publication record.
   """
   @spec put_publication(integer(), Publication.t()) :: {:ok, map()} | {:error, term()}
   def put_publication(user_id, %Publication{} = publication) do
@@ -37,8 +39,80 @@ defmodule AnnotAt.Atproto.StandardSite do
   @doc """
   The AT-URI of the user's publication record, used as a document's `site`.
   """
-  @spec publication_uri(String.t()) :: String.t()
-  def publication_uri(did), do: "at://#{did}/#{@publication}/self"
+  @spec publication_uri(String.t(), String.t()) :: String.t()
+  def publication_uri(did, rkey), do: "at://#{did}/#{@publication}/#{rkey}"
+
+  @doc """
+  Verifies the website hosts the publication's AT-URI at its well-known path,
+  proving control of the domain.
+  """
+  @spec verify_ownership(String.t(), String.t()) ::
+          :ok
+          | {:error,
+             :mismatch | :not_found | {:http_status, pos_integer()} | {:transport, term()}}
+  def verify_ownership(url, at_uri) do
+    url = wellknown_url(url)
+
+    case HTTP.get_text(url) do
+      {:ok, body} ->
+        if String.trim(body) == at_uri do
+          :ok
+        else
+          {:error, :mismatch}
+        end
+
+      {:error, {:http_status, 404}} ->
+        {:error, :not_found}
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  @spec list_publications(integer()) ::
+          {:ok, [%{rkey: String.t(), url: String.t() | nil, name: String.t() | nil}]}
+          | {:error, :no_session}
+  def list_publications(user_id) do
+    with {:ok, user} <- fetch_user(user_id),
+         {:ok, %{"records" => records}} <-
+           Client.query(user.id, "com.atproto.repo.listRecords",
+             repo: user.did,
+             collection: @publication
+           ) do
+      {:ok, Enum.map(records, &to_existing/1)}
+    end
+  end
+
+  @doc """
+  Reads the user's publication document.
+  """
+  @spec get_publication(integer(), String.t()) :: {:ok, map()} | {:error, term()}
+  def get_publication(user_id, rkey) do
+    with {:ok, user} <- fetch_user(user_id),
+         {:ok, %{"value" => value}} <-
+           Client.query(user.id, "com.atproto.repo.getRecord",
+             repo: user.did,
+             collection: @publication,
+             rkey: rkey
+           ) do
+      {:ok, value}
+    end
+  end
+
+  @doc """
+  Builds the publication document we create, from page metadata.
+  """
+  @spec draft_publication(String.t(), %{title: String.t() | nil, description: String.t() | nil}) ::
+          map()
+  def draft_publication(url, %{title: title, description: description}) do
+    %{
+      "$type" => @publication,
+      "name" => title,
+      "url" => url,
+      "description" => description,
+      "preferences" => %{"showInDiscover" => true}
+    }
+  end
 
   defp fetch_user(user_id) do
     case Accounts.get_user(user_id) do
@@ -86,4 +160,24 @@ defmodule AnnotAt.Atproto.StandardSite do
 
   defp put_optional(map, _key, nil), do: map
   defp put_optional(map, key, value), do: Map.put(map, key, value)
+
+  defp wellknown_url(url) do
+    uri = URI.parse(url)
+
+    URI.to_string(%{
+      uri
+      | path: @wellknown_path,
+        query: nil,
+        fragment: nil
+    })
+  end
+
+  defp to_existing(%{"uri" => uri, "value" => value}) do
+    rkey =
+      uri
+      |> String.split("/")
+      |> List.last()
+
+    %{rkey: rkey, url: value["url"], name: value["name"]}
+  end
 end

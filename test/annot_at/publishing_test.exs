@@ -10,47 +10,80 @@ defmodule AnnotAt.PublishingTest do
     {:ok, user} =
       Accounts.upsert_user(%{
         did: "did:plc:ewvi7nxzyoun6zhxrhs64oiz",
-        handle: "alice.test",
+        handle: "jola.dev",
         pds_host: "https://pds.example.com"
       })
 
     %{scope: Scope.for_user(user)}
   end
 
-  test "create_site/3 persists a verified site owned by the scope", %{scope: scope} do
-    assert {:ok, %Site{} = site} = Publishing.create_site(scope, "3mope7jyypk22", site_attrs())
-    assert site.user_id == scope.user.id
-    assert "3mope7jyypk22" == site.rkey
-    assert %DateTime{} = site.verified_at
+  test "create_site/2 creates a site with no rkey yet", %{scope: scope} do
+    assert {:ok, %Site{} = site} =
+             Publishing.create_site(
+               scope,
+               "https://example.com"
+             )
 
-    assert [listed] = Publishing.list_sites(scope)
-    assert listed.id == site.id
+    assert site.user_id == scope.user.id
+    refute site.rkey
+    refute site.verified_at
   end
 
-  test "a user can hold many sites for different websites", %{scope: scope} do
-    {:ok, _} = Publishing.create_site(scope, "aaa", site_attrs(%{url: "https://one.com"}))
-    {:ok, _} = Publishing.create_site(scope, "bbb", site_attrs(%{url: "https://two.com"}))
+  test "use_new_publication/2 mints and stores an rkey", %{scope: scope} do
+    {:ok, site} = Publishing.create_site(scope, "https://example.com")
+    assert {:ok, updated} = Publishing.use_new_publication(scope, site)
+    assert updated.rkey =~ ~r/^[234567abcdefghij]/
+  end
 
+  test "use_existing_publication/3 stores the given rkey", %{scope: scope} do
+    {:ok, site} = Publishing.create_site(scope, "https://example.com")
+    assert {:ok, updated} = Publishing.use_existing_publication(scope, site, "3mope7jyypk22")
+    assert "3mope7jyypk22" == updated.rkey
+  end
+
+  test "create_site/2 resumes the same site for a url", %{scope: scope} do
+    {:ok, first} = Publishing.create_site(scope, "https://example.com/")
+    {:ok, again} = Publishing.create_site(scope, "https://example.com/")
+    assert first.id == again.id
+    assert first.rkey == again.rkey
+  end
+
+  test "create_site/2 keeps distinct sites per url", %{scope: scope} do
+    {:ok, _} = Publishing.create_site(scope, "https://one.com")
+    {:ok, _} = Publishing.create_site(scope, "https://two.com")
     assert 2 == length(Publishing.list_sites(scope))
   end
 
-  test "create_site/3 requires name, url and feed_url", %{scope: scope} do
-    assert {:error, changeset} = Publishing.create_site(scope, "rkey", %{})
-    assert %{name: _, url: _, feed_url: _} = errors_on(changeset)
+  test "get_site!/2 returns the scope's site", %{scope: scope} do
+    {:ok, site} = Publishing.create_site(scope, "https://example.com")
+    assert Publishing.get_site!(scope, site.id).id == site.id
   end
 
-  test "rkey is unique per user", %{scope: scope} do
-    {:ok, _} = Publishing.create_site(scope, "dup", site_attrs())
-    assert {:error, changeset} = Publishing.create_site(scope, "dup", site_attrs())
-    assert %{rkey: _} = errors_on(changeset)
+  test "update_site/3 fills editable fields", %{scope: scope} do
+    {:ok, site} = Publishing.create_site(scope, "https://example.com")
+
+    assert {:ok, updated} =
+             Publishing.update_site(scope, site, %{
+               name: "Blog",
+               feed_url: "https://example.com/feed.xml"
+             })
+
+    assert "Blog" == updated.name
+    assert "https://example.com/feed.xml" == updated.feed_url
   end
 
-  test "get_site!/2 raises for a site the scope doesn't own", %{scope: scope} do
+  test "mark_verified/2 then mark_published/2 stamp the timestamps", %{scope: scope} do
+    {:ok, site} = Publishing.create_site(scope, "https://example.com")
+    {:ok, verified} = Publishing.mark_verified(scope, site)
+    assert %DateTime{} = verified.verified_at
+    {:ok, published} = Publishing.mark_published(scope, verified)
+    assert %DateTime{} = published.published_at
+  end
+
+  test "scoped functions refuse a site the scope doesn't own", %{scope: scope} do
     {:ok, other} = Accounts.upsert_user(%{did: "did:plc:otheruser000000000000000"})
     other_scope = Scope.for_user(other)
-    {:ok, site} = Publishing.create_site(scope, "scoped", site_attrs())
-
-    assert Publishing.get_site!(scope, site.id).id == site.id
+    {:ok, site} = Publishing.create_site(scope, "https://example.com")
 
     assert_raise Ecto.NoResultsError, fn ->
       Publishing.get_site!(
@@ -58,22 +91,32 @@ defmodule AnnotAt.PublishingTest do
         site.id
       )
     end
-  end
-
-  test "update_site/3 refuses a site the scope doesn't own", %{scope: scope} do
-    {:ok, other} = Accounts.upsert_user(%{did: "did:plc:otheruser000000000000000"})
-    other_scope = Scope.for_user(other)
-    {:ok, site} = Publishing.create_site(scope, "owned", site_attrs())
 
     assert_raise Ecto.NoResultsError, fn ->
       Publishing.update_site(other_scope, site, %{name: "x"})
     end
+
+    assert_raise Ecto.NoResultsError, fn ->
+      Publishing.mark_verified(other_scope, site)
+    end
+
+    assert_raise Ecto.NoResultsError, fn ->
+      Publishing.mark_published(other_scope, site)
+    end
   end
 
-  defp site_attrs(overrides \\ %{}) do
-    Map.merge(
-      %{name: "My Blog", url: "https://example.com", feed_url: "https://example.com/feed.xml"},
-      overrides
-    )
+  test "use_new_publication/2 mints an rkey and leaves it unpublished", %{scope: scope} do
+    {:ok, site} = Publishing.create_site(scope, "https://example.com")
+    assert {:ok, updated} = Publishing.use_new_publication(scope, site)
+    assert updated.rkey =~ ~r/^[234567abcdefghij]/
+    refute updated.published_at
+  end
+
+  test "use_existing_publication/3 stores the rkey and marks it published",
+       %{scope: scope} do
+    {:ok, site} = Publishing.create_site(scope, "https://example.com")
+    assert {:ok, updated} = Publishing.use_existing_publication(scope, site, "3mope7jyypk22")
+    assert "3mope7jyypk22" == updated.rkey
+    assert %DateTime{} = updated.published_at
   end
 end

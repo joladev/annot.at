@@ -9,6 +9,7 @@ defmodule AnnotAt.Publishing do
 
   alias AnnotAt.Accounts.Scope
   alias AnnotAt.Accounts.User
+  alias AnnotAt.Atproto.TID
   alias AnnotAt.Publishing.Site
   alias AnnotAt.Repo
 
@@ -21,14 +22,53 @@ defmodule AnnotAt.Publishing do
     Repo.get_by!(Site, id: id, user_id: user_id)
   end
 
-  def create_site(%Scope{user: %User{id: user_id}}, rkey, attrs) do
-    %Site{
-      user_id: user_id,
-      rkey: rkey,
+  def create_site(%Scope{user: %User{id: user_id}}, url) do
+    case Repo.get_by(Site, user_id: user_id, url: url) do
+      nil ->
+        %Site{user_id: user_id}
+        |> Site.changeset(%{url: url})
+        |> Repo.insert()
+
+      %Site{} = site ->
+        {:ok, site}
+    end
+  end
+
+  def use_new_publication(%Scope{user: %User{id: user_id}}, %Site{} = site) do
+    verify_user_ownership!(site, user_id)
+    rkey = TID.now()
+
+    site
+    |> Ecto.Changeset.change(%{rkey: rkey})
+    |> Repo.update()
+  end
+
+  def use_existing_publication(%Scope{user: %User{id: user_id}}, %Site{} = site, rkey) do
+    verify_user_ownership!(site, user_id)
+
+    site
+    |> Ecto.Changeset.change(%{rkey: rkey, published_at: DateTime.utc_now(:second)})
+    |> Repo.update()
+  end
+
+  def mark_verified(%Scope{user: %User{id: user_id}}, %Site{} = site) do
+    verify_user_ownership!(site, user_id)
+
+    site
+    |> Ecto.Changeset.change(%{
       verified_at: DateTime.utc_now(:second)
-    }
-    |> Site.changeset(attrs)
-    |> Repo.insert()
+    })
+    |> Repo.update()
+  end
+
+  def mark_published(%Scope{user: %User{id: user_id}}, %Site{} = site) do
+    verify_user_ownership!(site, user_id)
+
+    site
+    |> Ecto.Changeset.change(%{
+      published_at: DateTime.utc_now(:second)
+    })
+    |> Repo.update()
   end
 
   def update_site(%Scope{user: %User{id: user_id}}, %Site{} = site, attrs) do

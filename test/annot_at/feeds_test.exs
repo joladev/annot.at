@@ -67,4 +67,20 @@ type="application/rss+xml"></head></html>)
       assert [] == Feeds.discover(html, "https://example.com")
     end
   end
+
+  describe "Feeds.metadata1/" do
+    test "extracts title and description" do
+      html = ~s(<html><head><title>My Blog</title><meta name="description"
+   content="Thoughts."></head></html>)
+
+      assert %{title: "My Blog", description: "Thoughts."} =
+               Feeds.metadata(html)
+    end
+
+    test "falls back to og tags, nils when absent" do
+      html = ~s(<html><head><meta property="og:title" content="OG
+   Title"></head></html>)
+      assert %{title: "OG\n   Title", description: nil} = Feeds.metadata(html)
+    end
+  end
 end

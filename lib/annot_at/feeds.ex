@@ -49,6 +49,26 @@ defmodule AnnotAt.Feeds do
     |> Enum.uniq_by(& &1.url)
   end
 
+  @doc """
+  Extracts a page's title and description from its HTML.
+  """
+  @spec metadata(binary()) :: %{title: String.t() | nil, description: String.t() | nil}
+  def metadata(html) when is_binary(html) do
+    doc = LazyHTML.from_document(html)
+
+    %{
+      title:
+        text_of(doc, "title") ||
+          meta_content(
+            doc,
+            ~s(meta[property="og:title"])
+          ),
+      description:
+        meta_content(doc, ~s(meta[name="description"])) ||
+          meta_content(doc, ~s(meta[property="og:description"]))
+    }
+  end
+
   defp source_from_attributes(attributes, base_url) do
     attributes = Map.new(attributes)
 
@@ -82,6 +102,30 @@ defmodule AnnotAt.Feeds do
       String.contains?(head, "<rss") -> :rss
       String.contains?(head, "<feed") -> :atom
       true -> :unknown
+    end
+  end
+
+  defp text_of(doc, selector) do
+    doc
+    |> LazyHTML.query(selector)
+    |> LazyHTML.text()
+    |> presence()
+  end
+
+  defp meta_content(doc, selector) do
+    doc
+    |> LazyHTML.query(selector)
+    |> LazyHTML.attribute("content")
+    |> List.first()
+    |> presence()
+  end
+
+  defp presence(nil), do: nil
+
+  defp presence(str) do
+    case String.trim(str) do
+      "" -> nil
+      trimmed -> trimmed
     end
   end
 end

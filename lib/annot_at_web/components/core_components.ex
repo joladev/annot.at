@@ -453,6 +453,22 @@ defmodule AnnotAtWeb.CoreComponents do
     """
   end
 
+  attr :label, :string, required: true
+  attr :value, :string, required: true
+  attr :sub, :string, required: true
+  attr :tint, :string, required: true
+  attr :shadow, :string, required: true
+
+  def stat_card(assigns) do
+    ~H"""
+    <div class={["rounded-2xl border-2 border-ink p-5", @tint, @shadow]}>
+      <div class="text-xs font-bold text-ink/70">{@label}</div>
+      <div class="mt-2 font-display text-3xl font-bold">{@value}</div>
+      <div class="mt-1 text-xs text-ink/55">{@sub}</div>
+    </div>
+    """
+  end
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector) do

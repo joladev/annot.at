@@ -5,12 +5,13 @@ defmodule AnnotAt.Publishing.Site do
 
   @type t :: %__MODULE__{
           user_id: integer(),
-          name: String.t(),
+          name: String.t() | nil,
           url: String.t(),
           description: String.t() | nil,
-          feed_url: String.t(),
-          rkey: String.t(),
-          verified_at: DateTime.t()
+          feed_url: String.t() | nil,
+          rkey: String.t() | nil,
+          verified_at: DateTime.t() | nil,
+          published_at: DateTime.t() | nil
         }
 
   schema "sites" do
@@ -23,10 +24,11 @@ defmodule AnnotAt.Publishing.Site do
     # The url of the feed
     field :feed_url, :string
     # rkey of the site.standard.publication record
-    # deterministically generated from did and url
     field :rkey, :string
     # when the site was verified
     field :verified_at, :utc_datetime
+    # when the user clicked publish
+    field :published_at, :utc_datetime
 
     belongs_to :user, AnnotAt.Accounts.User
 
@@ -35,14 +37,17 @@ defmodule AnnotAt.Publishing.Site do
 
   def changeset(site, attrs) do
     site
-    |> cast(attrs, [:name, :url, :description, :feed_url])
-    |> validate_required([:name, :url, :feed_url, :rkey])
+    |> cast(attrs, [:url, :name, :description, :feed_url])
+    |> validate_required([:url])
+    |> validate_length(:url, max: 2048)
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 1000)
-    |> validate_length(:url, max: 2048)
     |> validate_length(:feed_url, max: 2048)
-    |> validate_length(:rkey, max: 512)
+    |> unique_constraint(:url, name: :sites_user_id_url_index)
     |> foreign_key_constraint(:user_id)
-    |> unique_constraint(:rkey, name: :sites_user_id_rkey_index)
   end
+
+  def status(%__MODULE__{published_at: %DateTime{}}), do: :published
+  def status(%__MODULE__{verified_at: %DateTime{}}), do: :verified
+  def status(%__MODULE__{}), do: :draft
 end
