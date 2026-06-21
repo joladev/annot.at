@@ -9,20 +9,26 @@ defmodule AnnotAtWeb.DashboardLive do
   def render(assigns) do
     ~H"""
     <Layouts.dashboard flash={@flash} current_scope={@current_scope} active={:overview}>
-      <div class="flex justify-end">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center
+    sm:justify-between">
+        <div>
+          <h1 class="font-display text-3xl font-bold tracking-tight
+    sm:text-4xl">
+            Hi {@current_scope.user.display_name || @current_scope.user.handle}
+          </h1>
+          <p class="mt-2 text-ink/60">Here's what you're publishing to the
+            ATmosphere.</p>
+        </div>
         <.link
           navigate={~p"/sites/new"}
-          class="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-ink px-5 py-2.5 text-sm font-bold text-paper transition-all hover:scale-[1.02] active:scale-[0.98]"
+          class="inline-flex items-center gap-1.5 self-start rounded-xl border-2
+    border-ink bg-ink px-5 py-2.5 text-sm font-bold text-paper
+    shadow-[4px_4px_0px_0px_var(--color-peach-bold)] transition-all
+    hover:-translate-y-0.5 active:translate-y-0 sm:self-auto"
         >
-          <.icon name="hero-plus" class="size-4" /> Add your first site
+          <.icon name="hero-plus" class="size-5" /> Add a site
         </.link>
       </div>
-
-      <h1 class="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">
-        Hi {@current_scope.user.display_name || @current_scope.user.handle}
-      </h1>
-      <p class="mt-2 text-ink/60">Here's what you're publishing to the ATmosphere.</p>
-
       <div class="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <.stat_card
           label="Sites"

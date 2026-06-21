@@ -5,6 +5,8 @@ defmodule AnnotAtWeb.Layouts do
   """
   use AnnotAtWeb, :html
 
+  alias Phoenix.LiveView.JS
+
   # Embed all files in layouts/* within this module.
   # The default root.html.heex file contains the HTML
   # skeleton of your application, namely HTML headers
@@ -53,14 +55,51 @@ defmodule AnnotAtWeb.Layouts do
 
   def dashboard(assigns) do
     ~H"""
-    <div class="flex min-h-screen bg-paper text-ink">
-      <aside class="flex w-60 flex-none flex-col border-r-2 border-ink p-4">
-        <.link
-          navigate={~p"/dashboard"}
-          class="px-3 py-2 font-display text-xl font-bold tracking-tight"
-        >
+    <div class="min-h-screen bg-paper text-ink lg:flex">
+      <div class="flex items-center justify-between border-b-2 border-ink p-4
+    lg:hidden">
+        <.link navigate={~p"/dashboard"} class="font-display text-xl font-bold
+    tracking-tight">
           annot.at
         </.link>
+        <button
+          phx-click={toggle_sidebar()}
+          class="grid size-10 place-items-center rounded-xl border-2 border-ink
+    bg-paper transition-all active:scale-95"
+          aria-label="Open menu"
+        >
+          <.icon name="hero-bars-3" class="size-6" />
+        </button>
+      </div>
+
+      <div
+        id="sidebar-backdrop"
+        phx-click={toggle_sidebar()}
+        class="fixed inset-0 z-40 hidden bg-ink/40 lg:hidden"
+      />
+
+      <aside
+        id="sidebar"
+        class="fixed inset-y-0 left-0 z-50 flex w-60 -translate-x-full flex-col
+    border-r-2 border-ink bg-paper p-4 transition-transform duration-200 lg:static
+    lg:z-auto lg:translate-x-0"
+      >
+        <div class="flex items-center justify-between">
+          <.link
+            navigate={~p"/dashboard"}
+            class="px-3 py-2 font-display text-xl font-bold tracking-tight"
+          >
+            annot.at
+          </.link>
+          <button
+            phx-click={toggle_sidebar()}
+            class="grid size-9 place-items-center rounded-lg border-2 border-ink
+    lg:hidden"
+            aria-label="Close menu"
+          >
+            <.icon name="hero-x-mark" class="size-5" />
+          </button>
+        </div>
 
         <nav class="mt-4 flex flex-col gap-1">
           <.dash_nav_item
@@ -71,7 +110,8 @@ defmodule AnnotAtWeb.Layouts do
             Overview
           </.dash_nav_item>
 
-          <div class="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase tracking-widest text-ink/40">
+          <div class="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase
+    tracking-widest text-ink/40">
             Publish
           </div>
           <.dash_nav_item icon="hero-globe-alt" navigate={~p"/sites"} active={@active == :sites}>
@@ -79,7 +119,8 @@ defmodule AnnotAtWeb.Layouts do
           </.dash_nav_item>
           <.dash_nav_item icon="hero-document-text">Posts</.dash_nav_item>
 
-          <div class="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase tracking-widest text-ink/40">
+          <div class="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase
+    tracking-widest text-ink/40">
             Account
           </div>
           <.dash_nav_item icon="hero-cog-6-tooth">Settings</.dash_nav_item>
@@ -95,19 +136,24 @@ defmodule AnnotAtWeb.Layouts do
             />
             <div
               :if={!@current_scope.user.avatar_url}
-              class="size-9 flex-none rounded-full border-2 border-ink bg-gradient-to-br from-sky-bold to-peach-bold"
+              class="size-9 flex-none rounded-full border-2 border-ink
+    bg-gradient-to-br from-sky-bold to-peach-bold"
             />
             <div class="min-w-0">
               <div class="truncate text-sm font-bold leading-tight">
                 {@current_scope.user.display_name || @current_scope.user.handle}
               </div>
-              <div class="truncate text-xs text-ink/55">{"@" <> @current_scope.user.handle}</div>
+              <div class="truncate text-xs text-ink/55">
+                {"@" <>
+                  @current_scope.user.handle}
+              </div>
             </div>
           </div>
           <.link
             href={~p"/logout"}
             method="delete"
-            class="block px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-ink/45 hover:text-ink"
+            class="block px-3 py-1.5 text-[11px] font-bold uppercase
+    tracking-widest text-ink/45 hover:text-ink"
           >
             Sign out
           </.link>
@@ -118,9 +164,13 @@ defmodule AnnotAtWeb.Layouts do
         {render_slot(@inner_block)}
       </main>
     </div>
-
-    <.flash_group flash={@flash} />
     """
+  end
+
+  defp toggle_sidebar(js \\ %JS{}) do
+    js
+    |> JS.toggle_class("-translate-x-full", to: "#sidebar")
+    |> JS.toggle(to: "#sidebar-backdrop")
   end
 
   attr :icon, :string, required: true
