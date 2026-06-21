@@ -35,6 +35,7 @@ defmodule AnnotAtWeb.Router do
     live_session :authenticated,
       on_mount: [{AnnotAtWeb.UserAuth, :require_authenticated}] do
       live "/dashboard", DashboardLive
+      live "/sites", SitesLive
       live "/sites/new", SiteNewLive
       live "/sites/:id", SiteLive
     end

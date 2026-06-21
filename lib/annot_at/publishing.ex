@@ -15,7 +15,7 @@ defmodule AnnotAt.Publishing do
 
   @spec list_sites(Scope.t()) :: [Site.t()]
   def list_sites(%Scope{user: %User{id: user_id}}) do
-    Repo.all(from s in Site, where: s.user_id == ^user_id, order_by: [asc: s.inserted_at])
+    Repo.all(from s in Site, where: s.user_id == ^user_id, order_by: [desc: s.inserted_at])
   end
 
   def get_site!(%Scope{user: %User{id: user_id}}, id) do

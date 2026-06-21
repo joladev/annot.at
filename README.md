@@ -5,8 +5,8 @@ A service for automatically publishing content to the Atmosphere, using the stan
 ## TODO
 
 - [x] Sign up/sign in with Bluesky
-- [ ] Maybe some design?
-- [ ] Add site including verification
+- [x] Maybe some design?
+- [x] Add site including verification
 - [ ] RSS poller
 - [ ] standard.site document reader
 - [ ] Post to Bluesky

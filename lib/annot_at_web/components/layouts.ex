@@ -74,7 +74,9 @@ defmodule AnnotAtWeb.Layouts do
           <div class="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase tracking-widest text-ink/40">
             Publish
           </div>
-          <.dash_nav_item icon="hero-globe-alt">Sites</.dash_nav_item>
+          <.dash_nav_item icon="hero-globe-alt" navigate={~p"/sites"} active={@active == :sites}>
+            Sites
+          </.dash_nav_item>
           <.dash_nav_item icon="hero-document-text">Posts</.dash_nav_item>
 
           <div class="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase tracking-widest text-ink/40">
