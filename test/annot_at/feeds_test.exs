@@ -19,31 +19,52 @@ defmodule AnnotAt.FeedsTest do
   end
 
   describe "Feeds.discover/2" do
-    test "finds and resolves a relative feed url" do
-      html = """
-      <html>
-        <head>
-          <link rel="alternate" type="application/rss+xml" href="/feed.xml">
-        </head>
-      </html>
+    test "returns all declared feeds, resolved and labeled" do
+      html = ~s"""
+      <html><head>
+        <link rel="alternate" type="application/rss+xml" title="Main"
+      href="/feed.xml">
+        <link rel="alternate" type="application/atom+xml"
+      href="https://blog.example.com/atom">
+        <link rel="alternate" type="application/feed+json" title="JSON"
+      href="/feed.json">
+      </head></html>
       """
 
-      assert {:ok, "https://blog.example.com/feed.xml"} =
+      assert [main, atom, json] = Feeds.discover(html, "https://blog.example.com")
+
+      assert %Feeds.Source{url: "https://blog.example.com/feed.xml", title: "Main", format: :rss} =
+               main
+
+      assert %Feeds.Source{url: "https://blog.example.com/atom", title: nil, format: :atom} = atom
+      assert %Feeds.Source{format: :json, title: "JSON"} = json
+    end
+
+    test "ignores non-feed alternates and dedupes by url" do
+      html = ~s"""
+      <html><head>
+        <link rel="alternate" hreflang="fr" type="text/html" href="/fr">
+        <link rel="alternate" type="application/rss+xml" href="/feed.xml">
+        <link rel="alternate" type="application/rss+xml" href="/feed.xml">
+      </head></html>
+      """
+
+      assert [%Feeds.Source{url: "https://example.com/feed.xml"}] =
+               Feeds.discover(html, "https://example.com")
+    end
+
+    test "returns [] when no feed is declared" do
+      assert [] ==
                Feeds.discover(
-                 html,
-                 "https://blog.example.com"
+                 "<html><head></head></html>",
+                 "https://example.com"
                )
     end
 
-    test "returns :error when there's no feed link" do
-      html = """
-      <html>
-        <head>
-        </head>
-      </html>
-      """
-
-      assert :error = Feeds.discover(html, "https://blog.example.com")
+    test "skips feed links without an href" do
+      html = ~s(<html><head><link rel="alternate"
+type="application/rss+xml"></head></html>)
+      assert [] == Feeds.discover(html, "https://example.com")
     end
   end
 end

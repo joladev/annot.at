@@ -6,8 +6,17 @@ defmodule AnnotAt.Feeds do
 
   alias AnnotAt.Feeds.Feed
   alias AnnotAt.Feeds.RSS
+  alias AnnotAt.Feeds.Source
 
-  @feed_types ~w(application/rss+xml application/atom+xml appliation/feed+json)
+  @feed_formats %{
+    "application/rss+xml" => :rss,
+    "application/atom+xml" => :atom,
+    "application/feed+json" => :json
+  }
+
+  @feed_selector Enum.map_join(Map.keys(@feed_formats), ", ", fn type ->
+                   ~s(link[rel="alternate"][type="#{type}"])
+                 end)
 
   @doc """
   Parses a feed body into a `Feed`, detecting the format from body and
@@ -25,33 +34,39 @@ defmodule AnnotAt.Feeds do
   end
 
   @doc """
-  Finds a feed URL on a page.
+  Finds every feed URL on a page.
 
-  Looks for link alternate pointing to a feed and returns the first match.
+  Looks for link alternate pointing to feeds and returns all matches.
   """
-  @spec discover(binary(), String.t()) :: {:ok, String.t()} | :error
+  @spec discover(binary(), String.t()) :: [Source.t()]
   def discover(html, base_url) when is_binary(html) and is_binary(base_url) do
-    selector =
-      Enum.map_join(@feed_types, ", ", fn type ->
-        ~s(link[rel="alternate"][type="#{type}"])
-      end)
+    html
+    |> LazyHTML.from_document()
+    |> LazyHTML.query(@feed_selector)
+    |> LazyHTML.attributes()
+    |> Enum.map(&source_from_attributes(&1, base_url))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq_by(& &1.url)
+  end
 
-    href =
-      html
-      |> LazyHTML.from_document()
-      |> LazyHTML.query(selector)
-      |> LazyHTML.attribute("href")
-      |> List.first()
+  defp source_from_attributes(attributes, base_url) do
+    attributes = Map.new(attributes)
 
-    if href do
-      url =
-        base_url
-        |> URI.merge(href)
-        |> URI.to_string()
+    case attributes do
+      %{"href" => href, "type" => type} ->
+        url =
+          base_url
+          |> URI.merge(href)
+          |> URI.to_string()
 
-      {:ok, url}
-    else
-      :error
+        %Source{
+          url: url,
+          title: attributes["title"],
+          format: Map.fetch!(@feed_formats, type)
+        }
+
+      _ ->
+        nil
     end
   end
 
