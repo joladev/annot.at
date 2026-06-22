@@ -18,20 +18,22 @@ defmodule AnnotAt.Publishing do
     Repo.all(from s in Site, where: s.user_id == ^user_id, order_by: [desc: s.inserted_at])
   end
 
+  def list_sites_for_url(%Scope{user: %User{id: user_id}}, url) do
+    Repo.all(
+      from s in Site,
+        where: s.user_id == ^user_id and s.url == ^url,
+        order_by: [desc: s.inserted_at]
+    )
+  end
+
   def get_site!(%Scope{user: %User{id: user_id}}, id) do
     Repo.get_by!(Site, id: id, user_id: user_id)
   end
 
   def create_site(%Scope{user: %User{id: user_id}}, url) do
-    case Repo.get_by(Site, user_id: user_id, url: url) do
-      nil ->
-        %Site{user_id: user_id}
-        |> Site.changeset(%{url: url})
-        |> Repo.insert()
-
-      %Site{} = site ->
-        {:ok, site}
-    end
+    %Site{user_id: user_id}
+    |> Site.changeset(%{url: url})
+    |> Repo.insert()
   end
 
   def use_new_publication(%Scope{user: %User{id: user_id}}, %Site{} = site) do

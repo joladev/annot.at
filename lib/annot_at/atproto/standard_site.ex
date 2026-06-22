@@ -17,11 +17,11 @@ defmodule AnnotAt.Atproto.StandardSite do
   @doc """
   Creates or updates the user's publication record.
   """
-  @spec put_publication(integer(), Publication.t()) :: {:ok, map()} | {:error, term()}
-  def put_publication(user_id, %Publication{} = publication) do
+  @spec put_publication(integer(), String.t(), Publication.t()) :: {:ok, map()} | {:error, term()}
+  def put_publication(user_id, rkey, %Publication{} = publication) do
     with {:ok, user} <- fetch_user(user_id),
          {:ok, icon} <- upload_image(user_id, publication.icon) do
-      put_record(user, @publication, "self", publication_record(publication, icon))
+      put_record(user, @publication, rkey, publication_record(publication, icon))
     end
   end
 

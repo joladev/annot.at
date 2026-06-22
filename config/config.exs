@@ -82,6 +82,9 @@ config :annot_at, AnnotAt.Vault,
        tag: "AES.GCM.V1", key: Base.decode64!("8h8cn7yiPKyVKiCURGpw7/lUPqxEOahH2C+0CdGQIbI=")}
   ]
 
+config :annot_at,
+  dev_routes: false
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

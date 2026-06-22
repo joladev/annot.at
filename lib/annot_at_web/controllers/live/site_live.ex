@@ -2,23 +2,16 @@ defmodule AnnotAtWeb.SiteLive do
   use AnnotAtWeb, :live_view
 
   alias AnnotAt.Atproto.StandardSite
+  alias AnnotAt.Atproto.StandardSite.Publication
   alias AnnotAt.Feeds.Client
   alias AnnotAt.Publishing
   alias AnnotAt.Publishing.Site
   alias AnnotAt.URL
   alias Phoenix.LiveView.AsyncResult
 
-  @impl Phoenix.LiveView
-  def mount(%{"id" => id}, _session, socket) do
-    site = Publishing.get_site!(socket.assigns.current_scope, id)
+  require Logger
 
-    socket =
-      socket
-      |> assign(page_title: site.url, site: site)
-      |> advance(phase(site))
-
-    {:ok, socket}
-  end
+  @dev_routes Application.compile_env!(:annot_at, :dev_routes)
 
   @impl Phoenix.LiveView
   def render(assigns) do
@@ -39,7 +32,7 @@ defmodule AnnotAtWeb.SiteLive do
           </span>
           <button
             :if={is_nil(@site.published_at)}
-            phx-click="publish"
+            phx-click="open_publish"
             class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl
      border-2 border-ink bg-ink px-5 py-2.5 text-sm font-bold text-paper
      shadow-[4px_4px_0px_0px_var(--color-peach-bold)] transition-all
@@ -62,8 +55,73 @@ defmodule AnnotAtWeb.SiteLive do
             <.well_known_step verification={@verification} at_uri={@at_uri} />
         <% end %>
       </div>
+      <div :if={@confirm_publish} class="fixed inset-0 z-50 flex items-center
+       justify-center p-4">
+        <div class="absolute inset-0 bg-ink/50" phx-click="close_publish" />
+        <div class="relative w-full max-w-lg rounded-2xl border-2 border-ink
+       bg-paper p-6 shadow-[8px_8px_0px_0px_var(--color-ink)]">
+          <h2 class="font-display text-2xl font-bold tracking-tight">Publish to
+            the ATmosphere</h2>
+          <p class="mt-2 text-sm text-ink/70">
+            This writes a public <span class="font-mono text-xs">site.standard.publication</span>
+            record into your atproto repo, making your blog discoverable to any
+            ATmosphere reader. You can update or remove it later.
+          </p>
+
+          <.async_result :let={record} assign={@record}>
+            <:loading>
+              <p class="mt-4 text-sm text-ink/50">Reading your
+                site…</p>
+            </:loading>
+            <:failed :let={_}>
+              <p class="mt-4 text-sm font-bold text-red-600">Couldn't read your
+                site.</p>
+            </:failed>
+
+            <div class="mt-4 rounded-xl border-2 border-ink bg-sky-light p-4">
+              <div class="text-xs font-bold uppercase tracking-wide
+       text-ink/55">Name</div>
+              <div class="font-bold">{record["name"] || "Untitled"}</div>
+              <div class="mt-2 text-xs font-bold uppercase tracking-wide
+       text-ink/55">URL</div>
+              <div class="break-all text-sm font-medium">{record["url"]}</div>
+            </div>
+          </.async_result>
+
+          <div class="mt-6 flex justify-end gap-3">
+            <button
+              phx-click="close_publish"
+              class="rounded-xl border-2 border-ink bg-paper px-5 py-2.5 text-sm
+       font-bold transition-all hover:bg-sky-light"
+            >
+              Cancel
+            </button>
+            <button
+              phx-click="confirm_publish"
+              class="inline-flex items-center gap-1.5 rounded-xl border-2
+       border-ink bg-ink px-5 py-2.5 text-sm font-bold text-paper
+       shadow-[4px_4px_0px_0px_var(--color-peach-bold)] transition-all
+       hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <.icon name="hero-paper-airplane" class="size-5" /> Publish
+            </button>
+          </div>
+        </div>
+      </div>
     </Layouts.dashboard>
     """
+  end
+
+  @impl Phoenix.LiveView
+  def mount(%{"id" => id}, _session, socket) do
+    site = Publishing.get_site!(socket.assigns.current_scope, id)
+
+    socket =
+      socket
+      |> assign(page_title: site.url, site: site, confirm_publish: false)
+      |> advance(phase(site))
+
+    {:ok, socket}
   end
 
   @impl Phoenix.LiveView
@@ -120,8 +178,38 @@ defmodule AnnotAtWeb.SiteLive do
     {:noreply, advance(socket, :well_known)}
   end
 
-  def handle_event("publish", _params, socket) do
-    {:noreply, put_flash(socket, :info, "Publishing to the Atmosphere is coming soon.")}
+  def handle_event("open_publish", _params, socket) do
+    {:noreply, assign(socket, confirm_publish: true)}
+  end
+
+  def handle_event("close_publish", _params, socket) do
+    {:noreply, assign(socket, confirm_publish: false)}
+  end
+
+  def handle_event("confirm_publish", _params, socket) do
+    %{site: site, current_scope: scope, record: record} = socket.assigns
+
+    with %AsyncResult{ok?: true, result: draft} <- record,
+         publication = to_publication(draft),
+         {:ok, _} <- StandardSite.put_publication(scope.user.id, site.rkey, publication),
+         {:ok, site} <- Publishing.mark_published(scope, site) do
+      socket =
+        socket
+        |> assign(site: site, confirm_publish: false)
+        |> advance(phase(site))
+
+      {:noreply, socket}
+    else
+      other ->
+        Logger.warning("SiteLive: Publishing failed", reason: inspect(other))
+
+        socket =
+          socket
+          |> assign(confirm_publish: false)
+          |> put_flash(:error, "Couldn't publish, try again")
+
+        {:noreply, socket}
+    end
   end
 
   defp phase(%Site{verified_at: %DateTime{}}), do: :done
@@ -206,6 +294,14 @@ defmodule AnnotAtWeb.SiteLive do
     with {:ok, metadata} <- Client.metadata(site.url) do
       {:ok, %{record: StandardSite.draft_publication(site.url, metadata)}}
     end
+  end
+
+  defp to_publication(draft) do
+    %Publication{
+      name: draft["name"] || draft["url"],
+      url: draft["url"],
+      description: draft["description"]
+    }
   end
 
   attr :feeds, :any, required: true
@@ -383,6 +479,7 @@ defmodule AnnotAtWeb.SiteLive do
             >
               <.icon name="hero-arrow-path" class="size-5" /> Check again
             </button>
+            <.dev_skip_button />
           </div>
         </:failed>
 
@@ -563,5 +660,24 @@ defmodule AnnotAtWeb.SiteLive do
       </.info_card>
     </div>
     """
+  end
+
+  if @dev_routes do
+    defp dev_skip_button(assigns) do
+      ~H"""
+      <button
+        phx-click="confirm_verified"
+        class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl
+      border-2 border-ink bg-paper px-5 py-3 text-sm font-bold transition-all
+      hover:-translate-y-0.5 active:translate-y-0"
+      >
+        <.icon name="hero-x-mark" class="size-5" /> Skip (dev only)
+      </button>
+      """
+    end
+  else
+    defp dev_skip_button(assigns) do
+      ~H""
+    end
   end
 end

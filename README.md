@@ -2,6 +2,8 @@
 
 A service for automatically publishing content to the Atmosphere, using the standard.site lexicon. Register your publication and a discovery mechanism, and your content is automatically published.
 
+Requires your site to have a `link rel=alternate` for a feed set, and that you're able to verify your ownership by serving a `/.well-known` file.
+
 ## TODO
 
 - [x] Sign up/sign in with Bluesky

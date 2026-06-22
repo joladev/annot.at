@@ -43,7 +43,6 @@ defmodule AnnotAt.Publishing.Site do
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 1000)
     |> validate_length(:feed_url, max: 2048)
-    |> unique_constraint(:url, name: :sites_user_id_url_index)
     |> foreign_key_constraint(:user_id)
   end
 

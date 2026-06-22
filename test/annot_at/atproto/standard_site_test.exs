@@ -20,21 +20,21 @@ defmodule AnnotAt.Atproto.StandardSiteTest do
         assert user.id == user_id
         assert @did == body.repo
         assert "site.standard.publication" == body.collection
-        assert "self" == body.rkey
+        assert "abc123" == body.rkey
         assert "site.standard.publication" == body.record["$type"]
         assert "jola.dev" == body.record["name"]
         {:ok, %{"uri" => "at://x"}}
       end)
 
       pub = %Publication{name: "jola.dev", url: "https://jola.dev", description: "blog"}
-      assert {:ok, %{"uri" => "at://x"}} = StandardSite.put_publication(user.id, pub)
+      assert {:ok, %{"uri" => "at://x"}} = StandardSite.put_publication(user.id, "abc123", pub)
     end
 
     test "returns :no_session when the user does not exist" do
       reject(&Client.procedure/3)
 
       assert {:error, :no_session} =
-               StandardSite.put_publication(-1, %Publication{name: "x", url: "y"})
+               StandardSite.put_publication(-1, "abc123", %Publication{name: "x", url: "y"})
     end
 
     test "uploads the icon and embeds the returned blob" do
@@ -63,7 +63,7 @@ defmodule AnnotAt.Atproto.StandardSiteTest do
         icon: {<<1, 2, 3>>, "image/png"}
       }
 
-      assert {:ok, %{"uri" => "at://x"}} = StandardSite.put_publication(user.id, pub)
+      assert {:ok, %{"uri" => "at://x"}} = StandardSite.put_publication(user.id, "abc123", pub)
     end
 
     test "omits optional fields that are nil" do
@@ -76,7 +76,7 @@ defmodule AnnotAt.Atproto.StandardSiteTest do
       end)
 
       assert {:ok, %{}} =
-               StandardSite.put_publication(user.id, %Publication{
+               StandardSite.put_publication(user.id, "abc123", %Publication{
                  name: "n",
                  url: "https://n.example"
                })

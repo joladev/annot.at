@@ -41,11 +41,12 @@ defmodule AnnotAt.PublishingTest do
     assert "3mope7jyypk22" == updated.rkey
   end
 
-  test "create_site/2 resumes the same site for a url", %{scope: scope} do
-    {:ok, first} = Publishing.create_site(scope, "https://example.com/")
-    {:ok, again} = Publishing.create_site(scope, "https://example.com/")
-    assert first.id == again.id
-    assert first.rkey == again.rkey
+  test "list_sites_for_url/2 returns the scope's sites for that url", %{scope: scope} do
+    {:ok, _} = Publishing.create_site(scope, "https://example.com")
+    {:ok, _} = Publishing.create_site(scope, "https://other.com")
+
+    assert [%Site{url: "https://example.com"}] =
+             Publishing.list_sites_for_url(scope, "https://example.com")
   end
 
   test "create_site/2 keeps distinct sites per url", %{scope: scope} do
