@@ -4,6 +4,7 @@ defmodule AnnotAt.PublishingTest do
   alias AnnotAt.Accounts
   alias AnnotAt.Accounts.Scope
   alias AnnotAt.Publishing
+  alias AnnotAt.Publishing.Post
   alias AnnotAt.Publishing.Site
 
   setup do
@@ -119,5 +120,22 @@ defmodule AnnotAt.PublishingTest do
     assert {:ok, updated} = Publishing.use_existing_publication(scope, site, "3mope7jyypk22")
     assert "3mope7jyypk22" == updated.rkey
     assert %DateTime{} = updated.published_at
+  end
+
+  describe "create_post/2" do
+    test "then list_posts/1 round trips, scoped to the site", %{scope: scope} do
+      {:ok, site} = Publishing.create_site(scope, "https://example.com")
+
+      assert {:ok, %Post{} = post} =
+               Publishing.create_post(site, %{
+                 guid: "abc",
+                 rkey: "3mope",
+                 content_hash: "deadbeef"
+               })
+
+      assert post.site_id == site.id
+      assert [listed] = Publishing.list_posts(site)
+      assert listed.id == post.id
+    end
   end
 end

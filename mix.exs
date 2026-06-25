@@ -99,7 +99,7 @@ defmodule AnnotAt.MixProject do
         "compile --warnings-as-errors",
         "deps.unlock --unused",
         "format",
-        "test",
+        "test --warnings-as-errors",
         "credo --strict"
       ]
     ]

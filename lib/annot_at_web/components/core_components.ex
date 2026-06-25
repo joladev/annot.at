@@ -87,27 +87,47 @@ defmodule AnnotAtWeb.CoreComponents do
     """
   end
 
-  @doc """
-  Renders a button with navigation support.
-
-  ## Examples
-
-      <.button>Send!</.button>
-      <.button phx-click="go" variant="primary">Send!</.button>
-      <.button navigate={~p"/"}>Home</.button>
-  """
-  attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
-  attr :class, :any
-  attr :variant, :string, values: ~w(primary)
+  attr :rest, :global, include: ~w(href navigate patch method download name
+  value disabled)
+  attr :class, :any, default: nil
+  attr :variant, :string, default: "ghost", values: ~w(primary secondary accent
+  ghost)
+  attr :shadow, :string, default: nil
+  attr :size, :string, default: "md", values: ~w(sm md lg)
   slot :inner_block, required: true
 
   def button(%{rest: rest} = assigns) do
-    variants = %{"primary" => "btn-primary", nil => "btn-primary btn-soft"}
+    variants = %{
+      "primary" => "bg-ink text-paper",
+      "secondary" => "bg-peach-bold text-ink",
+      "accent" => "bg-sky-bold text-ink",
+      "ghost" => "bg-paper text-ink hover:bg-ink/5"
+    }
+
+    shadows = %{
+      nil => nil,
+      "primary" => "shadow-[4px_4px_0px_0px_var(--color-ink)]",
+      "secondary" => "shadow-[4px_4px_0px_0px_var(--color-peach-bold)]",
+      "accent" => "shadow-[4px_4px_0px_0px_var(--color-sky-bold)]"
+    }
+
+    sizes = %{
+      "sm" => "px-3 py-1.5 text-xs",
+      "md" => "px-5 py-2.5 text-sm",
+      "lg" => "px-6 py-4 text-lg"
+    }
 
     assigns =
-      assign_new(assigns, :class, fn ->
-        ["btn", Map.fetch!(variants, assigns[:variant])]
-      end)
+      assign(assigns, :class, [
+        "inline-flex cursor-pointer items-center justify-center gap-1.5
+  rounded-xl border-2 border-ink font-bold transition-all hover:-translate-y-0.5
+  active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50
+  disabled:shadow-none disabled:hover:translate-y-0",
+        Map.fetch!(sizes, assigns[:size]),
+        Map.fetch!(variants, assigns[:variant]),
+        Map.fetch!(shadows, assigns[:shadow]),
+        assigns[:class]
+      ])
 
     if rest[:href] || rest[:navigate] || rest[:patch] do
       ~H"""
@@ -469,6 +489,45 @@ defmodule AnnotAtWeb.CoreComponents do
     """
   end
 
+  @doc """
+  A modal dialog roughly based on the old Phoenix scaffold.
+
+  ## Examples
+
+      <.button phx-click={show_modal("confirm")}>Open</.button>
+
+      <.modal id="confirm">
+        <h2 class="font-display text-2xl font-bold tracking-tight">Are you
+    sure?</h2>
+        <.button phx-click={hide_modal("confirm")}>Cancel</.button>
+      </.modal>
+  """
+  attr :id, :string, required: true
+  attr :on_cancel, JS, default: %JS{}
+  slot :inner_block, required: true
+
+  def modal(assigns) do
+    ~H"""
+    <div id={@id} class="relative z-50 hidden">
+      <div id={"#{@id}-bg"} class="fixed inset-0 bg-ink/50" aria-hidden="true" />
+      <div class="fixed inset-0 flex items-center justify-center p-4">
+        <.focus_wrap
+          id={"#{@id}-content"}
+          phx-window-keydown={hide_modal(@on_cancel, @id)}
+          phx-key="escape"
+          phx-click-away={hide_modal(@on_cancel, @id)}
+          role="dialog"
+          aria-modal="true"
+          class="relative w-full max-w-lg rounded-2xl border-2 border-ink
+    bg-paper p-6 shadow-[8px_8px_0px_0px_var(--color-ink)]"
+        >
+          {render_slot(@inner_block)}
+        </.focus_wrap>
+      </div>
+    </div>
+    """
+  end
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector) do
@@ -490,6 +549,32 @@ defmodule AnnotAtWeb.CoreComponents do
         {"transition-all ease-in duration-200", "opacity-100 translate-y-0 sm:scale-100",
          "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
     )
+  end
+
+  def show_modal(js \\ %JS{}, id) when is_binary(id) do
+    js
+    |> JS.show(to: "##{id}")
+    |> JS.show(
+      to: "##{id}-bg",
+      time: 300,
+      transition: {"transition-opacity ease-out duration-300", "opacity-0", "opacity-100"}
+    )
+    |> show("##{id}-content")
+    |> JS.add_class("overflow-hidden", to: "body")
+    |> JS.focus_first(to: "##{id}-content")
+  end
+
+  def hide_modal(js \\ %JS{}, id) do
+    js
+    |> JS.hide(
+      to: "##{id}-bg",
+      time: 200,
+      transition: {"transition-opacity ease-in duration-200", "opacity-100", "opacity-0"}
+    )
+    |> hide("##{id}-content")
+    |> JS.hide(to: "##{id}", transition: {"block", "block", "hidden"})
+    |> JS.remove_class("overflow-hidden", to: "body")
+    |> JS.pop_focus()
   end
 
   @doc """

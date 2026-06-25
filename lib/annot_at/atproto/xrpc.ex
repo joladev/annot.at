@@ -86,9 +86,13 @@ defmodule AnnotAt.Atproto.XRPC do
   end
 
   defp needs_nonce?(401, headers) do
-    headers
-    |> Map.get("www-authenticate")
-    |> Enum.any?(&String.contains?(&1, "use_dpop_nonce"))
+    case Map.fetch(headers, "www-authenticate") do
+      {:ok, headers} ->
+        Enum.any?(headers, &String.contains?(&1, "use_dpop_nonce"))
+
+      :error ->
+        false
+    end
   end
 
   defp needs_nonce?(_status, _headers), do: false

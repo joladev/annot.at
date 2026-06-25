@@ -46,6 +46,18 @@ defmodule AnnotAtWeb.SiteLive do
       <div class="mt-8 space-y-3">
         <%= case phase(@site) do %>
           <% :done -> %>
+            <.link
+              navigate={~p"/sites/#{@site.id}/posts"}
+              class="group flex items-center justify-between gap-4 rounded-2xl border-2 border-ink bg-paper px-6 py-4 font-bold transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_var(--color-peach-bold)]"
+            >
+              <span class="flex items-center gap-2.5">
+                <.icon name="hero-document-text" class="size-5" /> View posts
+              </span>
+              <.icon
+                name="hero-arrow-right"
+                class="size-5 transition-transform group-hover:translate-x-1"
+              />
+            </.link>
             <.site_cards site={@site} record={@record} feed={@feed} />
           <% :feed -> %>
             <.feed_step feeds={@feeds} />
@@ -642,6 +654,7 @@ defmodule AnnotAtWeb.SiteLive do
           </:failed>
 
           <dl class="space-y-3">
+            <.record_field label="rkey" value={@site.rkey} />
             <.record_field label="Name" value={record["name"]} />
             <.record_field label="URL" value={record["url"]} />
             <.record_field label="Description" value={record["description"]} />

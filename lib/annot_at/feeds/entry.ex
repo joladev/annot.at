@@ -16,4 +16,11 @@ defmodule AnnotAt.Feeds.Entry do
           summary: String.t() | nil,
           content: String.t() | nil
         }
+
+  def hash(%__MODULE__{} = entry) do
+    # Join collapses the potential nils that :crypto.hash doesn't accept.
+    iodata = Enum.join([entry.title, entry.summary, entry.content])
+    hash = :crypto.hash(:sha256, iodata)
+    Base.encode16(hash, case: :lower)
+  end
 end

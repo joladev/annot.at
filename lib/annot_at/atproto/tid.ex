@@ -18,6 +18,13 @@ defmodule AnnotAt.Atproto.TID do
     new(timestamp)
   end
 
+  @spec at_time(DateTime.t()) :: String.t()
+  def at_time(%DateTime{} = datetime) do
+    clock_id = :rand.uniform(1024) - 1
+    timestamp_μs = DateTime.to_unix(datetime, :microsecond) * 1024
+    new(timestamp_μs + clock_id)
+  end
+
   @spec new(non_neg_integer()) :: String.t()
   def new(int) do
     int

@@ -10,6 +10,7 @@ defmodule AnnotAt.Publishing do
   alias AnnotAt.Accounts.Scope
   alias AnnotAt.Accounts.User
   alias AnnotAt.Atproto.TID
+  alias AnnotAt.Publishing.Post
   alias AnnotAt.Publishing.Site
   alias AnnotAt.Repo
 
@@ -78,6 +79,22 @@ defmodule AnnotAt.Publishing do
 
     site
     |> Site.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def list_posts(%Site{id: site_id}) do
+    Repo.all(from p in Post, where: p.site_id == ^site_id, order_by: [desc: p.inserted_at])
+  end
+
+  def create_post(%Site{id: site_id}, attrs) do
+    %Post{site_id: site_id}
+    |> Post.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def update_post(%Post{} = post, attrs) do
+    post
+    |> Post.changeset(attrs)
     |> Repo.update()
   end
 
