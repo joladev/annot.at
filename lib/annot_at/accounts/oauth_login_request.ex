@@ -14,6 +14,7 @@ defmodule AnnotAt.Accounts.OAuthLoginRequest do
     field :pkce_verifier, AnnotAt.Encrypted.Binary
     # Per-session DPoP key (serialized), tokens get bound to it at exchange
     field :dpop_private_jwk, AnnotAt.Encrypted.Binary
+    field :token_endpoint, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -27,7 +28,8 @@ defmodule AnnotAt.Accounts.OAuthLoginRequest do
       :pds_host,
       :auth_server_issuer,
       :pkce_verifier,
-      :dpop_private_jwk
+      :dpop_private_jwk,
+      :token_endpoint
     ])
     |> validate_required([
       :state,
@@ -36,7 +38,8 @@ defmodule AnnotAt.Accounts.OAuthLoginRequest do
       :pds_host,
       :auth_server_issuer,
       :pkce_verifier,
-      :dpop_private_jwk
+      :dpop_private_jwk,
+      :token_endpoint
     ])
     |> unique_constraint(:state)
   end

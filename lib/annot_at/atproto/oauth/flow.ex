@@ -106,11 +106,11 @@ defmodule AnnotAt.Atproto.OAuth.Flow do
   ## Optional
   - `:now` - base time for `expires_at` (defaults to the current time)
   """
-  @spec exchange_code(ServerMetadata.t(), keyword()) ::
+  @spec exchange_code(keyword()) ::
           {:ok, Session.t()}
           | {:error,
              request_error() | {:missing, String.t()} | {:invalid, String.t()} | :did_mismatch}
-  def exchange_code(%ServerMetadata{} = server, opts) do
+  def exchange_code(opts) do
     client_id = Keyword.fetch!(opts, :client_id)
     client_jwk = Keyword.fetch!(opts, :client_jwk)
     redirect_uri = Keyword.fetch!(opts, :redirect_uri)
@@ -120,6 +120,8 @@ defmodule AnnotAt.Atproto.OAuth.Flow do
     expected_did = Keyword.fetch!(opts, :expected_did)
     pds_endpoint = Keyword.fetch!(opts, :pds_endpoint)
     now = Keyword.get_lazy(opts, :now, &DateTime.utc_now/0)
+    token_endpoint = Keyword.fetch!(opts, :token_endpoint)
+    issuer = Keyword.fetch!(opts, :issuer)
 
     build_form = fn ->
       [
@@ -129,14 +131,14 @@ defmodule AnnotAt.Atproto.OAuth.Flow do
         code_verifier: code_verifier,
         client_id: client_id,
         client_assertion_type: ClientAssertion.assertion_type(),
-        client_assertion: ClientAssertion.sign(client_jwk, client_id, server.issuer)
+        client_assertion: ClientAssertion.sign(client_jwk, client_id, issuer)
       ]
     end
 
-    with {:ok, body} <- dpop_request(server.token_endpoint, build_form, dpop_key),
+    with {:ok, body} <- dpop_request(token_endpoint, build_form, dpop_key),
          {:ok, tokens} <- TokenResponse.parse(body),
          :ok <- verify_sub(tokens.sub, expected_did) do
-      {:ok, build_session(tokens, server, pds_endpoint, dpop_key, now)}
+      {:ok, build_session(tokens, issuer, pds_endpoint, dpop_key, now)}
     end
   end
 
@@ -176,7 +178,7 @@ defmodule AnnotAt.Atproto.OAuth.Flow do
     with {:ok, body} <- dpop_request(server.token_endpoint, build_form, session.dpop_key),
          {:ok, tokens} <- TokenResponse.parse(body),
          :ok <- verify_sub(tokens.sub, session.did) do
-      {:ok, build_session(tokens, server, session.pds_endpoint, session.dpop_key, now)}
+      {:ok, build_session(tokens, server.issuer, session.pds_endpoint, session.dpop_key, now)}
     end
   end
 
@@ -233,14 +235,14 @@ defmodule AnnotAt.Atproto.OAuth.Flow do
   defp verify_sub(sub, sub), do: :ok
   defp verify_sub(_sub, _expected), do: {:error, :did_mismatch}
 
-  defp build_session(tokens, server, pds_endpoint, dpop_key, now) do
+  defp build_session(tokens, issuer, pds_endpoint, dpop_key, now) do
     %Session{
       did: tokens.sub,
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
       dpop_key: dpop_key,
       scope: tokens.scope,
-      issuer: server.issuer,
+      issuer: issuer,
       pds_endpoint: pds_endpoint,
       expires_at: DateTime.add(now, tokens.expires_in, :second)
     }

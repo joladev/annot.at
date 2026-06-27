@@ -67,7 +67,6 @@ defmodule AnnotAt.Atproto.OAuth.LoginTest do
   describe "Login.complete_login/1" do
     test "exchanges the code and persists the user and session", %{jwk: jwk} do
       create_request()
-      server = server()
 
       session = %Session{
         did: @did,
@@ -80,8 +79,7 @@ defmodule AnnotAt.Atproto.OAuth.LoginTest do
         expires_at: ~U[2026-01-01 01:00:00Z]
       }
 
-      expect(Discovery, :discover, fn @pds -> {:ok, server} end)
-      expect(Flow, :exchange_code, fn ^server, _opts -> {:ok, session} end)
+      expect(Flow, :exchange_code, fn _opts -> {:ok, session} end)
 
       expect(Profile, :fetch, fn "jola.dev" ->
         {:ok, %{display_name: "Johanna", avatar_url: "https://cdn/av.jpg"}}
@@ -98,7 +96,7 @@ defmodule AnnotAt.Atproto.OAuth.LoginTest do
     end
 
     test "returns :invalid_state for an unknown state" do
-      reject(&Flow.exchange_code/2)
+      reject(&Flow.exchange_code/1)
 
       params = %{"code" => "x", "state" => "nope", "iss" => @issuer}
       assert {:error, :invalid_state} == Login.complete_login(params)
@@ -106,7 +104,7 @@ defmodule AnnotAt.Atproto.OAuth.LoginTest do
 
     test "rejects a callback whose iss does not match the stored issuer" do
       create_request()
-      reject(&Flow.exchange_code/2)
+      reject(&Flow.exchange_code/1)
 
       params = %{"code" => "c", "state" => "state-1", "iss" => "https://evil.example"}
       assert {:error, :login_failed} == Login.complete_login(params)
@@ -164,7 +162,8 @@ defmodule AnnotAt.Atproto.OAuth.LoginTest do
             pds_host: @pds,
             auth_server_issuer: @issuer,
             pkce_verifier: "verifier-1",
-            dpop_private_jwk: @dpop_jwk_json
+            dpop_private_jwk: @dpop_jwk_json,
+            token_endpoint: "#{@issuer}/oauth/token"
           },
           overrides
         )

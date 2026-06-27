@@ -66,8 +66,7 @@ defmodule AnnotAt.Atproto.OAuth.Login do
     result =
       with {:ok, request} <- take_request(state),
            :ok <- verify_issuer(request, iss),
-           {:ok, server} <- rediscover(request),
-           {:ok, session} <- exchange(server, request, code),
+           {:ok, session} <- exchange(request, code),
            {:ok, user} <- persist(request, session) do
         Logger.info("atproto login completed for #{user.handle} (#{user.did})")
 
@@ -114,7 +113,8 @@ defmodule AnnotAt.Atproto.OAuth.Login do
       pds_host: identity.pds_endpoint,
       auth_server_issuer: server.issuer,
       pkce_verifier: verifier,
-      dpop_private_jwk: DPoP.dump(dpop_key)
+      dpop_private_jwk: DPoP.dump(dpop_key),
+      token_endpoint: server.token_endpoint
     })
   end
 
@@ -128,18 +128,8 @@ defmodule AnnotAt.Atproto.OAuth.Login do
   defp verify_issuer(%{auth_server_issuer: iss}, iss), do: :ok
   defp verify_issuer(_request, _iss), do: {:error, :issuer_mismatch}
 
-  defp rediscover(request) do
-    with {:ok, server} <- Discovery.discover(request.pds_host) do
-      if server.issuer == request.auth_server_issuer do
-        {:ok, server}
-      else
-        {:error, :issuer_mismatch}
-      end
-    end
-  end
-
-  defp exchange(server, request, code) do
-    Flow.exchange_code(server,
+  defp exchange(request, code) do
+    Flow.exchange_code(
       client_id: Config.client_id(),
       client_jwk: Config.signing_key(),
       redirect_uri: Config.redirect_uri(),
@@ -147,7 +137,9 @@ defmodule AnnotAt.Atproto.OAuth.Login do
       code_verifier: request.pkce_verifier,
       dpop_key: DPoP.load(request.dpop_private_jwk),
       expected_did: request.did,
-      pds_endpoint: request.pds_host
+      pds_endpoint: request.pds_host,
+      issuer: request.auth_server_issuer,
+      token_endpoint: request.token_endpoint
     )
   end
 

@@ -21,7 +21,9 @@ defmodule AnnotAtWeb.SiteComponents do
           <div class="truncate font-display text-lg font-bold
     tracking-tight">{@site.url}</div>
           <div class="mt-0.5 truncate text-sm
-    text-ink/50">{@site.feed_url}</div>
+    text-ink/50">
+            {@site.feed_url || "No feed selected"}
+          </div>
         </div>
         <.status_badge status={Site.status(@site)} />
       </div>

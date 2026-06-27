@@ -125,13 +125,13 @@ defmodule AnnotAt.Atproto.OAuth.FlowTest do
     end
   end
 
-  describe "PAR.exchange_code/2" do
+  describe "PAR.exchange_code/1" do
     test "exchanges the code for a session", %{jwk: jwk} do
       expect(HTTP, :post_form, fn _url, _form, _headers ->
         {:ok, %{status: 200, body: @token_response, headers: %{}}}
       end)
 
-      assert {:ok, session} = Flow.exchange_code(@server, exchange_opts(jwk))
+      assert {:ok, session} = Flow.exchange_code(exchange_opts(jwk))
       assert @did == session.did
       assert "atproto" == session.scope
       assert "https://bsky.social" == session.issuer
@@ -155,7 +155,7 @@ defmodule AnnotAt.Atproto.OAuth.FlowTest do
         {:ok, %{status: 200, body: @token_response, headers: %{}}}
       end)
 
-      assert {:ok, _session} = Flow.exchange_code(@server, exchange_opts(jwk))
+      assert {:ok, _session} = Flow.exchange_code(exchange_opts(jwk))
     end
 
     test "rejects a token whose sub does not match the expected DID", %{jwk: jwk} do
@@ -164,10 +164,7 @@ defmodule AnnotAt.Atproto.OAuth.FlowTest do
       end)
 
       assert {:error, :did_mismatch} ==
-               Flow.exchange_code(
-                 @server,
-                 exchange_opts(jwk, expected_did: "did:plc:someoneelse")
-               )
+               Flow.exchange_code(exchange_opts(jwk, expected_did: "did:plc:someoneelse"))
     end
 
     test "propagates a token response parse error", %{jwk: jwk} do
@@ -184,7 +181,7 @@ defmodule AnnotAt.Atproto.OAuth.FlowTest do
         {:ok, %{status: 200, body: body, headers: %{}}}
       end)
 
-      assert {:error, {:missing, "sub"}} == Flow.exchange_code(@server, exchange_opts(jwk))
+      assert {:error, {:missing, "sub"}} == Flow.exchange_code(exchange_opts(jwk))
     end
   end
 
@@ -242,7 +239,9 @@ defmodule AnnotAt.Atproto.OAuth.FlowTest do
         dpop_key: jwk,
         expected_did: @did,
         pds_endpoint: @pds,
-        now: ~U[2026-01-01 00:00:00Z]
+        now: ~U[2026-01-01 00:00:00Z],
+        token_endpoint: "https://bsky.social/oauth/token",
+        issuer: "https://bsky.social"
       ],
       overrides
     )

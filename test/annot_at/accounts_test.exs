@@ -137,7 +137,8 @@ defmodule AnnotAt.AccountsTest do
         pds_host: "https://pds.example.com",
         auth_server_issuer: "https://bsky.social",
         pkce_verifier: "verifier-123",
-        dpop_private_jwk: "{}"
+        dpop_private_jwk: "{}",
+        token_endpoint: "somethnig"
       },
       overrides
     )
