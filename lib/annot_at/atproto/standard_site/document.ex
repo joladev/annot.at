@@ -27,4 +27,14 @@ defmodule AnnotAt.Atproto.StandardSite.Document do
           tags: [String.t()] | nil,
           cover_image: {binary(), String.t()} | nil
         }
+
+  def split_aturi(aturi) do
+    case String.split(aturi, "/") do
+      ["at:", "", did, "site.standard.document", rkey] ->
+        {:ok, %{did: did, rkey: rkey}}
+
+      _ ->
+        {:error, :invalid}
+    end
+  end
 end

@@ -36,6 +36,16 @@ defmodule AnnotAt.Atproto.StandardSite do
     end
   end
 
+  def delete_document(user_id, rkey) do
+    with {:ok, user} <- fetch_user(user_id) do
+      Client.procedure(user.id, "com.atproto.repo.deleteRecord", %{
+        repo: user.did,
+        collection: @document,
+        rkey: rkey
+      })
+    end
+  end
+
   @doc """
   The AT-URI of the user's publication record, used as a document's `site`.
   """

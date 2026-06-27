@@ -7,6 +7,7 @@ defmodule AnnotAtWeb.PostsLiveTest do
   alias AnnotAt.Accounts
   alias AnnotAt.Accounts.Scope
   alias AnnotAt.Atproto.StandardSite
+  alias AnnotAt.Atproto.TID
   alias AnnotAt.Feeds.Client
   alias AnnotAt.Feeds.Entry
   alias AnnotAt.Feeds.Feed
@@ -43,6 +44,18 @@ defmodule AnnotAtWeb.PostsLiveTest do
     }
 
     expect(Client, :load, fn _url -> {:ok, feed} end)
+
+    expect(Client, :resolve_documents, fn _feed, _user_did ->
+      %{entries: entries} = feed
+
+      %{
+        feed
+        | entries:
+            Enum.map(entries, fn entry ->
+              %{entry | rkey: TID.at_time(entry.published_at)}
+            end)
+      }
+    end)
 
     expect(StandardSite, :put_document, fn user_id, document ->
       assert user_id == user.id

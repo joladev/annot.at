@@ -3,7 +3,6 @@ defmodule AnnotAtWeb.PostsLive do
 
   alias AnnotAt.Atproto.StandardSite
   alias AnnotAt.Atproto.StandardSite.Document
-  alias AnnotAt.Atproto.TID
   alias AnnotAt.Feeds.Client
   alias AnnotAt.Feeds.Entry
   alias AnnotAt.Publishing
@@ -84,7 +83,7 @@ defmodule AnnotAtWeb.PostsLive do
               :if={has_date?(entry)}
               variant="primary"
               size="sm"
-              disabled={publishing?(@publishing, entry)}
+              disabled={is_nil(entry.rkey) or publishing?(@publishing, entry)}
               phx-value-guid={entry.id}
               phx-click={
                 "select_post"
@@ -257,7 +256,7 @@ defmodule AnnotAtWeb.PostsLive do
       to_publish =
         entries
         |> pending(posts)
-        |> Enum.filter(&has_date?/1)
+        |> Enum.filter(fn post -> has_date?(post) && post.rkey end)
 
       socket =
         socket
@@ -310,8 +309,11 @@ defmodule AnnotAtWeb.PostsLive do
 
   defp load_feed(socket, site) do
     if connected?(socket) do
+      user_did = socket.assigns.current_scope.user.did
+
       assign_async(socket, :feed, fn ->
         with {:ok, feed} <- Client.load(site.feed_url) do
+          feed = Client.resolve_documents(feed, user_did)
           {:ok, %{feed: feed}}
         end
       end)
@@ -320,9 +322,9 @@ defmodule AnnotAtWeb.PostsLive do
     end
   end
 
-  defp to_document(entry, site, user, rkey) do
+  defp to_document(entry, site, user) do
     %Document{
-      rkey: rkey,
+      rkey: entry.rkey,
       site: StandardSite.publication_uri(user.did, site.rkey),
       title: entry.title,
       path: path_of(entry.url),
@@ -336,20 +338,19 @@ defmodule AnnotAtWeb.PostsLive do
   defp path_of(url), do: URI.parse(url).path
 
   defp create_document(scope, site, entry) do
-    rkey = TID.at_time(entry.published_at)
-    document = to_document(entry, site, scope.user, rkey)
+    document = to_document(entry, site, scope.user)
 
     with {:ok, _} <- StandardSite.put_document(scope.user.id, document) do
       Publishing.create_post(site, %{
         guid: entry.id,
-        rkey: rkey,
+        rkey: document.rkey,
         content_hash: Entry.hash(entry)
       })
     end
   end
 
   defp update_document(scope, site, %Post{} = post, entry) do
-    document = to_document(entry, site, scope.user, post.rkey)
+    document = to_document(entry, site, scope.user)
 
     with {:ok, _} <- StandardSite.put_document(scope.user.id, document) do
       Publishing.update_post(post, %{content_hash: Entry.hash(entry)})

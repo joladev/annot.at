@@ -69,6 +69,14 @@ defmodule AnnotAt.Feeds do
     }
   end
 
+  def document_uri(html) do
+    html
+    |> LazyHTML.from_document()
+    |> LazyHTML.query(~s(link[rel="site.standard.document"]))
+    |> LazyHTML.attribute("href")
+    |> List.first()
+  end
+
   defp source_from_attributes(attributes, base_url) do
     attributes = Map.new(attributes)
 
