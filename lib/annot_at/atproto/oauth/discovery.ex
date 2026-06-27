@@ -42,7 +42,8 @@ defmodule AnnotAt.Atproto.OAuth.Discovery do
   defp authorization_server(resource, pds_endpoint) do
     with :ok <- verify_resource(resource, pds_endpoint) do
       case Map.get(resource, "authorization_servers") do
-        [issuer | _] when is_binary(issuer) -> {:ok, issuer}
+        # There has to be exactly one issuer according to the spec.
+        [issuer] when is_binary(issuer) -> {:ok, issuer}
         _ -> {:error, :no_authorization_server}
       end
     end

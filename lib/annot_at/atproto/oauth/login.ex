@@ -185,7 +185,7 @@ defmodule AnnotAt.Atproto.OAuth.Login do
 
       {:error, reason} ->
         Logger.warning("failed to fetch profile for #{handle}: #{inspect(reason)}")
-        %{display_name: nil, avatar: nil}
+        %{display_name: nil, avatar_url: nil}
     end
   end
 end
