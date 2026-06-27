@@ -307,14 +307,30 @@ defmodule AnnotAtWeb.PostsLive do
     {:noreply, socket}
   end
 
+  def handle_async(:load_feed, {:ok, {:ok, %{feed: feed, posts: posts}}}, socket) do
+    {:noreply,
+     assign(socket,
+       feed: AsyncResult.ok(socket.assigns.feed, feed),
+       posts: posts
+     )}
+  end
+
+  def handle_async(:load_feed, {:ok, reason}, socket) do
+    Logger.warning("PostsLive: failed to load feed", reason: inspect(reason))
+    {:noreply, assign(socket, feed: AsyncResult.failed(socket.assigns.feed, reason))}
+  end
+
   defp load_feed(socket, site) do
     if connected?(socket) do
       user_did = socket.assigns.current_scope.user.did
 
-      assign_async(socket, :feed, fn ->
+      socket
+      |> assign(feed: AsyncResult.loading())
+      |> start_async(:load_feed, fn ->
         with {:ok, feed} <- Client.load(site.feed_url) do
           feed = Client.resolve_documents(feed, user_did)
-          {:ok, %{feed: feed}}
+          posts = Publishing.adopt(site, feed.entries)
+          {:ok, %{feed: feed, posts: posts}}
         end
       end)
     else
