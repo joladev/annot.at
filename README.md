@@ -1,4 +1,6 @@
-# AnnotAt
+# annot.at
+
+*This is a work in progress. Feel free to poke around and take it for a spin, but keep in mind it's very much under development.*
 
 A service for automatically publishing content to the Atmosphere, using the standard.site lexicon. Register your publication and a discovery mechanism, and your content is automatically published.
 
