@@ -9,6 +9,10 @@ defmodule AnnotAtWeb.DashboardLive do
   def render(assigns) do
     ~H"""
     <Layouts.dashboard flash={@flash} current_scope={@current_scope} active={:overview}>
+      <.banner class="my-6" icon="hero-exclamation-triangle">
+        This app is in active development.
+      </.banner>
+
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center
     sm:justify-between">
         <div>

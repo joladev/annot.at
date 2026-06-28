@@ -528,6 +528,27 @@ defmodule AnnotAtWeb.CoreComponents do
     """
   end
 
+  attr :class, :any, default: nil
+  attr :icon, :any, default: "hero-exclamation-triangle"
+  slot :inner_block, required: true
+
+  def banner(assigns) do
+    ~H"""
+    <div
+      role="note"
+      class={[
+        "flex items-center gap-2.5 rounded-xl border-2 border-ink bg-peach-light px-4 py-2.5 text-sm text-ink",
+        @class
+      ]}
+    >
+      <.icon name={@icon} class="size-4 shrink-0" />
+      <span class="font-medium leading-none">
+        {render_slot(@inner_block)}
+      </span>
+    </div>
+    """
+  end
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector) do

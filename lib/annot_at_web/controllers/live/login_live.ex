@@ -93,6 +93,7 @@ defmodule AnnotAtWeb.LoginLive do
                       :if={actor.avatar}
                       src={actor.avatar}
                       class="size-8 shrink-0 rounded-full border-2 border-ink object-cover"
+                      alt=""
                     />
                     <div
                       :if={!actor.avatar}
