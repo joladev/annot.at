@@ -7,23 +7,6 @@ defmodule AnnotAtWeb.AuthControllerTest do
 
   @did "did:plc:ewvi7nxzyoun6zhxrhs64oiz"
 
-  defp create_user do
-    {:ok, user} =
-      Accounts.upsert_login(
-        %{did: @did, handle: "alice.test", pds_host: "https://pds.example.com"},
-        %{
-          auth_server_issuer: "https://bsky.social",
-          granted_scopes: "atproto",
-          access_token: "a",
-          refresh_token: "r",
-          dpop_private_jwk: "{}",
-          expires_at: ~U[2026-01-01 01:00:00Z]
-        }
-      )
-
-    user
-  end
-
   test "GET /oauth-client-metadata.json serves the client metadata", %{conn: conn} do
     conn = get(conn, ~p"/oauth-client-metadata.json")
     metadata = json_response(conn, 200)
@@ -36,27 +19,6 @@ defmodule AnnotAtWeb.AuthControllerTest do
 
     assert [key] = metadata["jwks"]["keys"]
     refute Map.has_key?(key, "d")
-  end
-
-  test "GET /login renders the form", %{conn: conn} do
-    conn = get(conn, ~p"/login")
-    assert html_response(conn, 200) =~ "login-form"
-  end
-
-  test "POST /login redirects to the authorization URL", %{conn: conn} do
-    expect(Login, :start_login, fn "alice.test" ->
-      {:ok, "https://bsky.social/oauth/authorize?x=1"}
-    end)
-
-    conn = post(conn, ~p"/login", %{"handle" => "alice.test"})
-    assert "https://bsky.social/oauth/authorize?x=1" == redirected_to(conn)
-  end
-
-  test "POST /login re-renders with an error for an invalid handle", %{conn: conn} do
-    expect(Login, :start_login, fn _ -> {:error, :invalid_handle} end)
-
-    conn = post(conn, ~p"/login", %{"handle" => "nope"})
-    assert html_response(conn, 200) =~ "valid handle"
   end
 
   test "GET /auth/callback logs in and redirects dashboard", %{conn: conn} do
@@ -86,5 +48,22 @@ defmodule AnnotAtWeb.AuthControllerTest do
 
     assert ~p"/" == redirected_to(conn)
     refute get_session(conn, :user_id)
+  end
+
+  defp create_user do
+    {:ok, user} =
+      Accounts.upsert_login(
+        %{did: @did, handle: "alice.test", pds_host: "https://pds.example.com"},
+        %{
+          auth_server_issuer: "https://bsky.social",
+          granted_scopes: "atproto",
+          access_token: "a",
+          refresh_token: "r",
+          dpop_private_jwk: "{}",
+          expires_at: ~U[2026-01-01 01:00:00Z]
+        }
+      )
+
+    user
   end
 end

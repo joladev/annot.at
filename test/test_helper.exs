@@ -1,5 +1,6 @@
 Mimic.copy(AnnotAt.Atproto.DNS)
 Mimic.copy(AnnotAt.Feeds.Client)
+Mimic.copy(AnnotAt.Atproto.Directory)
 Mimic.copy(AnnotAt.Atproto.HTTP)
 Mimic.copy(AnnotAt.Atproto.Identity)
 Mimic.copy(AnnotAt.Atproto.Profile)

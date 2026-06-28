@@ -48,19 +48,6 @@ liveSocket.connect();
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket;
 
-// Login is a DeadView form, this adds a nice little spinner for it
-document.addEventListener("submit", (e) => {
-  if (e.target?.id !== "login-form") return;
-
-  const btn = e.target.querySelector("button[type='submit']");
-
-  if (!btn) return;
-
-  btn.disabled = true;
-  btn.innerHTML =
-    '<span class="inline-block size-5 animate-spin rounded-full border-2 border-current border-t-transparent"></span>Connecting…';
-});
-
 // The lines below enable quality of life phoenix_live_reload
 // development features:
 //

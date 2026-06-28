@@ -22,8 +22,9 @@ defmodule AnnotAtWeb.Router do
 
     get "/", PageController, :home
 
-    get "/login", AuthController, :new
-    post "/login", AuthController, :create
+    live_session :login, on_mount: [{AnnotAtWeb.UserAuth, :mount_current_scope}] do
+      live "/login", LoginLive
+    end
   end
 
   scope "/", AnnotAtWeb do

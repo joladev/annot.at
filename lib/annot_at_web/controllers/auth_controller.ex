@@ -7,22 +7,6 @@ defmodule AnnotAtWeb.AuthController do
   alias AnnotAt.Atproto.OAuth.Config
   alias AnnotAt.Atproto.OAuth.Login
 
-  def new(conn, _params) do
-    render(conn, :new, handle: "")
-  end
-
-  def create(conn, %{"handle" => handle}) do
-    case Login.start_login(handle) do
-      {:ok, url} ->
-        redirect(conn, external: url)
-
-      {:error, reason} ->
-        conn
-        |> put_flash(:error, error_message(reason))
-        |> render(:new, handle: handle)
-    end
-  end
-
   def callback(conn, params) do
     case Login.complete_login(params) do
       {:ok, user} ->
@@ -56,7 +40,6 @@ defmodule AnnotAtWeb.AuthController do
     json(conn, metadata)
   end
 
-  defp error_message(:invalid_handle), do: "That doesn't look like a valid handle."
   defp error_message(:invalid_state), do: "Your login link expired. Please try again."
   defp error_message({:oauth_error, _}), do: "Authorization was denied or failed."
   defp error_message(_reason), do: "Something went wrong. Please try again."

@@ -17,8 +17,8 @@ defmodule AnnotAt.Atproto.HTTP do
   @spec get_json(String.t()) ::
           {:ok, map()}
           | {:error, {:http_status, pos_integer()} | {:transport, term()} | :invalid_json}
-  def get_json(url) when is_binary(url) do
-    with {:ok, body} <- get_body(url) do
+  def get_json(url, opts \\ []) when is_binary(url) do
+    with {:ok, body} <- get_body(url, opts) do
       case Jason.decode(body) do
         {:ok, %{} = json} -> {:ok, json}
         _ -> {:error, :invalid_json}
@@ -94,8 +94,10 @@ defmodule AnnotAt.Atproto.HTTP do
   defp method_atom("GET"), do: :get
   defp method_atom("POST"), do: :post
 
-  defp get_body(url) when is_binary(url) do
-    case Req.get(url, decode_body: false, receive_timeout: @receive_timeout) do
+  defp get_body(url, opts \\ []) when is_binary(url) do
+    opts = Keyword.merge([decode_body: false, receive_timeout: @receive_timeout], opts)
+
+    case Req.get(url, opts) do
       {:ok, %Req.Response{status: status, body: body}} when status in 200..299 -> {:ok, body}
       {:ok, %Req.Response{status: status}} -> {:error, {:http_status, status}}
       {:error, reason} -> {:error, {:transport, reason}}
