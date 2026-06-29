@@ -4,6 +4,7 @@ defmodule AnnotAt.Feeds do
   detects format and parses.
   """
 
+  alias AnnotAt.Feeds.Atom
   alias AnnotAt.Feeds.Feed
   alias AnnotAt.Feeds.RSS
   alias AnnotAt.Feeds.Source
@@ -27,7 +28,7 @@ defmodule AnnotAt.Feeds do
   def parse(body, content_type \\ nil) when is_binary(body) do
     case detect(body, content_type) do
       :rss -> RSS.parse(body)
-      :atom -> {:error, :unsupported_feed}
+      :atom -> Atom.parse(body)
       :json -> {:error, :unsupported_feed}
       :unknown -> {:error, :unrecognized_feed}
     end

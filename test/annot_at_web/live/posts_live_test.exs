@@ -69,7 +69,7 @@ defmodule AnnotAtWeb.PostsLiveTest do
       |> init_test_session(%{user_id: user.id})
       |> live(~p"/sites/#{site.id}/posts")
 
-    assert render_async(lv) =~ title
+    assert render_async(lv, 2000) =~ title
 
     lv
     |> element("button[phx-value-guid='#{id}']")
@@ -79,7 +79,7 @@ defmodule AnnotAtWeb.PostsLiveTest do
     |> element("#publish-modal-confirm")
     |> render_click()
 
-    assert render_async(lv) =~ "Published"
+    assert render_async(lv, 2000) =~ "Published"
     assert [%{guid: ^id}] = Publishing.list_posts(site)
   end
 

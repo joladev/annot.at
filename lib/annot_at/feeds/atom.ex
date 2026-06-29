@@ -1,8 +1,6 @@
-defmodule AnnotAt.Feeds.RSS do
+defmodule AnnotAt.Feeds.Atom do
   @moduledoc """
-  Saxy SAX parser for RSS 2.0 feeds into `AnnotAt.Feeds.Feed`.
-
-  Used Gluttony as a reference implementation.
+  Saxy parser for Atom 1.0 feeds.
   """
 
   @behaviour Saxy.Handler
@@ -30,10 +28,7 @@ defmodule AnnotAt.Feeds.RSS do
         end
 
       {:error, %Saxy.ParseError{} = saxy_error} ->
-        Logger.warning("Feeds.RSS saxy error",
-          error: inspect(saxy_error)
-        )
-
+        Logger.warning("Feeds.Atom saxy error", error: inspect(saxy_error))
         {:error, :invalid_feed}
     end
   end
@@ -49,14 +44,19 @@ defmodule AnnotAt.Feeds.RSS do
 
   def handle_event(:start_document, _data, state), do: {:ok, state}
 
-  def handle_event(:start_element, {"item", _attrs}, state) do
+  def handle_event(:start_element, {"entry", _attrs}, state) do
     {:ok,
      %{
        state
        | entries: [%Entry{} | state.entries],
-         stack: ["item" | state.stack],
+         stack: ["entry" | state.stack],
          current_text: []
      }}
+  end
+
+  def handle_event(:start_element, {"link", attrs}, state) do
+    state = apply_link(state, List.first(state.stack), attrs)
+    {:ok, %{state | stack: ["link" | state.stack], current_text: []}}
   end
 
   def handle_event(:start_element, {name, _attrs}, state) do
@@ -67,8 +67,8 @@ defmodule AnnotAt.Feeds.RSS do
     {:ok, %{state | current_text: [chars | state.current_text]}}
   end
 
-  def handle_event(:end_element, "item", state) do
-    ["item" | rest_stack] = state.stack
+  def handle_event(:end_element, "entry", state) do
+    ["entry" | rest_stack] = state.stack
     [entry | rest] = state.entries
     entry = finalize_entry(entry)
     {:ok, %{state | entries: [entry | rest], stack: rest_stack, current_text: []}}
@@ -83,11 +83,11 @@ defmodule AnnotAt.Feeds.RSS do
 
     state =
       cond do
-        parent == "item" ->
+        parent == "entry" ->
           [current | entries] = state.entries
           %{state | entries: [apply_entry_field(current, name, text) | entries]}
 
-        parent == "channel" ->
+        parent == "feed" ->
           %{state | feed: apply_feed_field(state.feed, name, text)}
 
         true ->
@@ -99,17 +99,37 @@ defmodule AnnotAt.Feeds.RSS do
 
   def handle_event(:end_document, _data, state), do: {:ok, state}
 
+  defp apply_link(state, parent, attrs) do
+    attrs = Map.new(attrs)
+    rel = Map.get(attrs, "rel", "alternate")
+
+    case {parent, rel, attrs} do
+      {"entry", "alternate", %{"href" => href}} ->
+        [current | entries] = state.entries
+        %{state | entries: [%{current | url: href} | entries]}
+
+      {"feed", "alternate", %{"href" => href}} ->
+        %{state | feed: %{state.feed | url: href}}
+
+      _ ->
+        state
+    end
+  end
+
   defp apply_entry_field(entry, "title", text), do: %{entry | title: text}
-  defp apply_entry_field(entry, "link", text), do: %{entry | url: text}
-  defp apply_entry_field(entry, "guid", text), do: %{entry | id: text}
-  defp apply_entry_field(entry, "description", text), do: %{entry | summary: text}
-  defp apply_entry_field(entry, "content:encoded", text), do: %{entry | content: text}
-  defp apply_entry_field(entry, "pubDate", text), do: %{entry | published_at: parse_date(text)}
+  defp apply_entry_field(entry, "id", text), do: %{entry | id: text}
+  defp apply_entry_field(entry, "summary", text), do: %{entry | summary: text}
+  defp apply_entry_field(entry, "content", text), do: %{entry | content: text}
+  defp apply_entry_field(entry, "published", text), do: %{entry | published_at: parse_date(text)}
+
+  defp apply_entry_field(entry, "updated", text) do
+    %{entry | published_at: entry.published_at || parse_date(text)}
+  end
+
   defp apply_entry_field(entry, _name, _text), do: entry
 
   defp apply_feed_field(feed, "title", text), do: %{feed | title: text}
-  defp apply_feed_field(feed, "description", text), do: %{feed | description: text}
-  defp apply_feed_field(feed, "link", text), do: %{feed | url: text}
+  defp apply_feed_field(feed, "subtitle", text), do: %{feed | description: text}
   defp apply_feed_field(feed, _name, _text), do: feed
 
   defp finalize_entry(%Entry{id: nil, url: url} = entry) when is_binary(url) do
@@ -139,7 +159,7 @@ defmodule AnnotAt.Feeds.RSS do
         datetime
 
       {:error, reason} ->
-        Logger.debug("Feeds.RSS: unparseable pubDate - #{text}", reason: inspect(reason))
+        Logger.debug("Feeds.Atom: unparseable date - #{text}", reason: inspect(reason))
         nil
     end
   end
