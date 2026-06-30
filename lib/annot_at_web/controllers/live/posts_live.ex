@@ -69,13 +69,24 @@ defmodule AnnotAtWeb.PostsLive do
         <div :if={pending(feed.entries, @posts) != []} class="mt-6 space-y-3">
           <div
             :for={entry <- pending(feed.entries, @posts)}
-            class="flex items-center justify-between gap-3 rounded-2xl border-2
-        border-ink bg-paper p-4"
+            class="flex items-center gap-4 rounded-2xl border-2 border-ink bg-paper p-4"
           >
-            <div class="min-w-0">
+            <.cover_thumb entry={entry} />
+
+            <div class="min-w-0 flex-1">
               <div class="truncate font-bold">{entry.title}</div>
-              <div :if={entry.published_at} class="mt-0.5 text-xs text-ink/50">
-                {Calendar.strftime(entry.published_at, "%b %d, %Y")}
+              <div :if={entry.summary} class="mt-0.5 truncate text-sm text-ink/55">
+                {entry.summary}
+              </div>
+              <div class="mt-1 flex items-center gap-2 text-xs text-ink/45">
+                <span :if={entry.published_at}>{Calendar.strftime(entry.published_at, "%b
+          %d, %Y")}</span>
+                <span
+                  :if={entry.cover_status in [:too_large, :not_image]}
+                  class="text-ink/45"
+                >
+                  {cover_note(entry.cover_status)}
+                </span>
               </div>
             </div>
 
@@ -85,11 +96,7 @@ defmodule AnnotAtWeb.PostsLive do
               size="sm"
               disabled={is_nil(entry.rkey) or publishing?(@publishing, entry)}
               phx-value-guid={entry.id}
-              phx-click={
-                "select_post"
-                |> JS.push()
-                |> show_modal("publish-modal")
-              }
+              phx-click={"select_post" |> JS.push() |> show_modal("publish-modal")}
             >
               <.icon
                 :if={publishing?(@publishing, entry)}
@@ -98,8 +105,8 @@ defmodule AnnotAtWeb.PostsLive do
               />
               {if publishing?(@publishing, entry), do: "Publishing…", else: "Publish"}
             </.button>
-            <span :if={not has_date?(entry)} class="flex-none text-xs
-        text-ink/40">No date</span>
+            <span :if={not has_date?(entry)} class="flex-none text-xs text-ink/40">No
+              date</span>
           </div>
         </div>
 
@@ -112,16 +119,26 @@ defmodule AnnotAtWeb.PostsLive do
               class="flex items-center justify-between gap-3 rounded-2xl
         border-2 border-ink/15 px-4 py-3"
             >
-              <div class="min-w-0">
-                <div class="truncate font-bold text-ink/70">
-                  {entry.title}
-                  <span class="text-primary/50 text-xs ml-4">
-                    {entry_to_post(@posts, entry).rkey}
-                  </span>
+              <.cover_thumb entry={entry} />
+
+              <div class="min-w-0 flex-1">
+                <div class="truncate font-bold text-ink/70">{entry.title}</div>
+                <div :if={entry.summary} class="mt-0.5 truncate text-sm text-ink/50">
+                  {entry.summary}
                 </div>
-                <div class="mt-0.5 flex items-center gap-1.5 text-xs
-        text-ink/45">
-                  <.icon name="hero-check" class="size-3.5" /> Published
+                <div class="mt-1 flex items-center gap-2 text-xs text-ink/45">
+                  <span class="flex items-center gap-1">
+                    <.icon name="hero-check" class="size-3.5" /> Published
+                  </span>
+                  <span class="truncate text-ink/40">
+                    {entry_to_post(
+                      @posts,
+                      entry
+                    ).rkey}
+                  </span>
+                  <span :if={entry.cover_status in [:too_large, :not_image]}>
+                    {cover_note(entry.cover_status)}
+                  </span>
                 </div>
               </div>
 
@@ -234,7 +251,7 @@ defmodule AnnotAtWeb.PostsLive do
              &(&1.id ==
                  guid)
            ),
-         %Post{} = post <- Map.get(posts, guid) do
+         {:ok, %Post{} = post} <- Map.fetch(posts, guid) do
       socket =
         socket
         |> assign(publishing: MapSet.put(socket.assigns.publishing, guid))
@@ -346,7 +363,8 @@ defmodule AnnotAtWeb.PostsLive do
       path: path_of(entry.url),
       published_at: entry.published_at,
       description: entry.summary,
-      text_content: entry.content
+      text_content: entry.content,
+      cover_image: fetch_cover(entry)
     }
   end
 
@@ -439,5 +457,44 @@ defmodule AnnotAtWeb.PostsLive do
       _ ->
         nil
     end
+  end
+
+  defp fetch_cover(%Entry{cover_status: status, image: url})
+       when status in [:ok, :unknown] and is_binary(url) do
+    case Client.fetch_image(url) do
+      {:ok, image} -> image
+      {:error, _} -> nil
+    end
+  end
+
+  defp fetch_cover(_entry), do: nil
+
+  defp cover_note(:too_large), do: "Cover image too large to publish (max 1MB)"
+  defp cover_note(:not_image), do: "Cover image isn't a supported format"
+
+  attr :entry, :map, required: true
+
+  def cover_thumb(assigns) do
+    ~H"""
+    <img
+      :if={@entry.cover_status in [:ok, :unknown] && @entry.image}
+      src={@entry.image}
+      alt=""
+      class="aspect-[1.91/1] w-24 shrink-0 rounded-lg border-2 border-ink/15 object-cover"
+    />
+    <div
+      :if={@entry.cover_status in [:too_large, :not_image]}
+      title={cover_note(@entry.cover_status)}
+      class="flex aspect-[1.91/1] w-24 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-ink/30 text-ink/35"
+    >
+      <.icon name="hero-exclamation-triangle" class="size-5" />
+    </div>
+    <div
+      :if={@entry.cover_status == :none}
+      class="flex aspect-[1.91/1] w-24 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-ink/10 text-ink/20"
+    >
+      <.icon name="hero-photo" class="size-5" />
+    </div>
+    """
   end
 end

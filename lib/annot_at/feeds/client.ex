@@ -11,6 +11,7 @@ defmodule AnnotAt.Feeds.Client do
   alias AnnotAt.Feeds.Source
 
   @receive_timeout 10_000
+  @cover_max_bytes 1_000_000
 
   @doc """
   Fetches a page and returns the feeds discovered.
@@ -51,31 +52,37 @@ defmodule AnnotAt.Feeds.Client do
     end
   end
 
-  @doc """
-  Fetches a page to extract the <link rel="site.standard.document"> href if it exists.
-  """
-  @spec document_rkey(String.t(), String.t()) ::
-          {:ok, String.t()}
-          | {:error,
-             :invalid
-             | :not_declared
-             | :did_mismatch
-             | {:http_status, pos_integer()}
-             | {:transport, term()}}
-  def document_rkey(url, expected_did) do
-    with {:ok, html} <- get(url),
-         {:ok, uri} <- document_uri(html) do
-      extract_rkey(uri, expected_did)
-    end
-  end
-
   def resolve_documents(%Feed{entries: entries} = feed, did) do
     entries =
       entries
-      |> Task.async_stream(&put_rkey(&1, did), timeout: :infinity, max_concurrency: 4)
+      |> Task.async_stream(&resolve_entry(&1, did), timeout: :infinity, max_concurrency: 4)
       |> Enum.map(fn {:ok, entry} -> entry end)
 
     %{feed | entries: entries}
+  end
+
+  @spec fetch_image(String.t()) ::
+          {:ok, {binary(), String.t()}}
+          | {:error,
+             :not_an_image | :too_large | {:http_status, pos_integer()} | {:transport, term()}}
+  def fetch_image(url) do
+    case Req.get(url, decode_body: false, receive_timeout: @receive_timeout) do
+      {:ok, %Req.Response{status: status, body: body, headers: headers}}
+      when status in 200..299 ->
+        type = content_type(headers)
+
+        cond do
+          is_nil(type) or not image_type?(type) -> {:error, :not_an_image}
+          byte_size(body) > @cover_max_bytes -> {:error, :too_large}
+          true -> {:ok, {body, type}}
+        end
+
+      {:ok, %Req.Response{status: status}} ->
+        {:error, {:http_status, status}}
+
+      {:error, reason} ->
+        {:error, {:transport, reason}}
+    end
   end
 
   defp get(url) do
@@ -112,13 +119,86 @@ defmodule AnnotAt.Feeds.Client do
     end
   end
 
-  defp put_rkey(%Entry{url: url} = entry, did) do
-    case document_rkey(url, did) do
-      {:ok, rkey} ->
-        %{entry | rkey: rkey}
+  defp resolve_entry(%Entry{url: url} = entry, did) when is_binary(url) do
+    case get(url) do
+      {:ok, html} ->
+        entry
+        |> put_cover(html, url)
+        |> put_rkey(html, did)
 
       {:error, _} ->
         entry
     end
   end
+
+  defp resolve_entry(entry, _did), do: entry
+
+  defp put_cover(entry, html, url) do
+    image = Feeds.image(html, url)
+    %{entry | image: image, cover_status: cover_status(image)}
+  end
+
+  defp put_rkey(entry, html, did) do
+    case resolve_rkey(html, did) do
+      {:ok, rkey} -> %{entry | rkey: rkey}
+      {:error, _} -> entry
+    end
+  end
+
+  defp resolve_rkey(html, did) do
+    with {:ok, uri} <- document_uri(html) do
+      extract_rkey(uri, did)
+    end
+  end
+
+  defp cover_status(nil), do: :none
+
+  defp cover_status(url) do
+    case Req.request(url: url, method: :head, receive_timeout: @receive_timeout) do
+      {:ok, %Req.Response{status: status, headers: headers}} when status in 200..299 ->
+        classify(content_type(headers), content_length(headers))
+
+      _ ->
+        :unknown
+    end
+  end
+
+  defp classify(nil, _length), do: :unknown
+
+  defp classify(type, length) do
+    cond do
+      not image_type?(type) -> :not_image
+      is_nil(length) -> :unknown
+      length > @cover_max_bytes -> :too_large
+      true -> :ok
+    end
+  end
+
+  defp content_type(headers) do
+    case headers["content-type"] do
+      [value | _] ->
+        value
+        |> String.split(";")
+        |> List.first()
+        |> String.trim()
+
+      _ ->
+        nil
+    end
+  end
+
+  defp content_length(headers) do
+    case headers["content-length"] do
+      [value | _] ->
+        case Integer.parse(value) do
+          {bytes, _} -> bytes
+          :error -> nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp image_type?(type), do: String.starts_with?(type, "image/")
 end

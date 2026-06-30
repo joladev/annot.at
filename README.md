@@ -6,14 +6,23 @@ A service for automatically publishing content to the Atmosphere, using the stan
 
 Requires your site to have a `link rel=alternate` for a feed set, and that you're able to verify your ownership by serving a `/.well-known` file.
 
+Document rkeys are derived from the post `<link rel="site.standard.document" href="<aturi>"`, so your blog must set that up. Document rkeys have to be TIDs to be valid, and should be stable, so either generate them and store them in your blog post fronmatter/metadata, or use a deterministic implementation that can run multiple times for the same post and give the same result.
+
 ## TODO
 
 - [x] Sign up/sign in with Bluesky
 - [x] Maybe some design?
 - [x] Add site including verification
+- [ ] Write a guide for using this
+- [ ] Document cover images
+- [ ] Document content with html content type
 - [ ] RSS poller
 - [ ] standard.site document reader
 - [ ] Post to Bluesky
+- [ ] Let atproto drive things more
+  - [ ] List publications, including not explicitly added ones
+  - [ ] List documents, including not explicitly added ones
+  - [ ] List dangling documents/documents that no longer validate against post etc
 
 ## Authenticating
 

@@ -6,7 +6,19 @@ defmodule AnnotAt.Feeds.Entry do
   different forms like RSS and atom.
   """
 
-  defstruct [:id, :url, :title, :published_at, :summary, :content, :rkey]
+  defstruct [
+    :id,
+    :url,
+    :title,
+    :published_at,
+    :summary,
+    :content,
+    :rkey,
+    :image,
+    cover_status: :none
+  ]
+
+  @type cover_status :: :ok | :too_large | :not_image | :unknown | :none
 
   @type t :: %__MODULE__{
           id: String.t() | nil,
@@ -15,7 +27,9 @@ defmodule AnnotAt.Feeds.Entry do
           published_at: DateTime.t() | nil,
           summary: String.t() | nil,
           content: String.t() | nil,
-          rkey: String.t() | nil
+          rkey: String.t() | nil,
+          image: String.t() | nil,
+          cover_status: cover_status()
         }
 
   def hash(%__MODULE__{} = entry) do

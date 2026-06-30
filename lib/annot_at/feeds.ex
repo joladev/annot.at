@@ -78,6 +78,21 @@ defmodule AnnotAt.Feeds do
     |> List.first()
   end
 
+  @spec image(binary(), String.t()) :: String.t() | nil
+  def image(html, base_url) when is_binary(html) and is_binary(base_url) do
+    doc = LazyHTML.from_document(html)
+
+    content =
+      meta_content(doc, ~s(meta[property="og:image"])) ||
+        meta_content(doc, ~s(meta[name="twitter:image"]))
+
+    if content do
+      base_url
+      |> URI.merge(content)
+      |> URI.to_string()
+    end
+  end
+
   defp source_from_attributes(attributes, base_url) do
     attributes = Map.new(attributes)
 
