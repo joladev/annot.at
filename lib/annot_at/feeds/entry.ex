@@ -15,8 +15,8 @@ defmodule AnnotAt.Feeds.Entry do
     :content,
     :rkey,
     :image,
-    :categories,
-    cover_status: :none
+    cover_status: :none,
+    categories: []
   ]
 
   @type cover_status :: :ok | :too_large | :not_image | :unknown | :none
@@ -35,7 +35,7 @@ defmodule AnnotAt.Feeds.Entry do
         }
 
   def hash(%__MODULE__{} = entry) do
-    tags = Enum.sort(entry.tags)
+    tags = Enum.sort(entry.categories)
     # Join collapses the potential nils that :crypto.hash doesn't accept.
     iodata = Enum.join([entry.title, entry.summary, entry.content, tags])
     hash = :crypto.hash(:sha256, iodata)
