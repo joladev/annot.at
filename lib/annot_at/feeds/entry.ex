@@ -35,8 +35,9 @@ defmodule AnnotAt.Feeds.Entry do
         }
 
   def hash(%__MODULE__{} = entry) do
+    tags = Enum.sort(entry.tags)
     # Join collapses the potential nils that :crypto.hash doesn't accept.
-    iodata = Enum.join([entry.title, entry.summary, entry.content])
+    iodata = Enum.join([entry.title, entry.summary, entry.content, tags])
     hash = :crypto.hash(:sha256, iodata)
     Base.encode16(hash, case: :lower)
   end
