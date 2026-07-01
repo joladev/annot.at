@@ -15,6 +15,7 @@ defmodule AnnotAt.Feeds.Entry do
     :content,
     :rkey,
     :image,
+    :categories,
     cover_status: :none
   ]
 
@@ -29,7 +30,8 @@ defmodule AnnotAt.Feeds.Entry do
           content: String.t() | nil,
           rkey: String.t() | nil,
           image: String.t() | nil,
-          cover_status: cover_status()
+          cover_status: cover_status(),
+          categories: [String.t()]
         }
 
   def hash(%__MODULE__{} = entry) do

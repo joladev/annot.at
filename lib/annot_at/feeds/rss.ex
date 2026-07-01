@@ -53,7 +53,7 @@ defmodule AnnotAt.Feeds.RSS do
     {:ok,
      %{
        state
-       | entries: [%Entry{} | state.entries],
+       | entries: [%Entry{categories: []} | state.entries],
          stack: ["item" | state.stack],
          current_text: []
      }}
@@ -105,6 +105,10 @@ defmodule AnnotAt.Feeds.RSS do
   defp apply_entry_field(entry, "description", text), do: %{entry | summary: text}
   defp apply_entry_field(entry, "content:encoded", text), do: %{entry | content: text}
   defp apply_entry_field(entry, "pubDate", text), do: %{entry | published_at: parse_date(text)}
+
+  defp apply_entry_field(entry, "category", text),
+    do: %{entry | categories: [text | entry.categories]}
+
   defp apply_entry_field(entry, _name, _text), do: entry
 
   defp apply_feed_field(feed, "title", text), do: %{feed | title: text}
@@ -112,11 +116,16 @@ defmodule AnnotAt.Feeds.RSS do
   defp apply_feed_field(feed, "link", text), do: %{feed | url: text}
   defp apply_feed_field(feed, _name, _text), do: feed
 
-  defp finalize_entry(%Entry{id: nil, url: url} = entry) when is_binary(url) do
-    %{entry | id: url}
-  end
+  defp finalize_entry(%Entry{} = entry) do
+    id =
+      if is_nil(entry.id) and is_binary(entry.url) do
+        entry.url
+      else
+        entry.id
+      end
 
-  defp finalize_entry(entry), do: entry
+    %{entry | id: id, categories: Enum.reverse(entry.categories)}
+  end
 
   defp text(parts) do
     result =

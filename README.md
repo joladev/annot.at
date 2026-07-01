@@ -14,7 +14,7 @@ Document rkeys are derived from the post `<link rel="site.standard.document" hre
 - [x] Maybe some design?
 - [x] Add site including verification
 - [ ] Write a guide for using this
-- [ ] Document cover images
+- [x] Document cover images
 - [ ] Document content with html content type
 - [ ] RSS poller
 - [ ] standard.site document reader

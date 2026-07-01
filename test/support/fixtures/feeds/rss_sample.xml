@@ -17,6 +17,8 @@
       <content:encoded
             ><![CDATA[<p>The full <strong>content</strong> of the first post.</p>]]></content:encoded>
       <pubDate>Wed, 02 Oct 2024 13:00:00 GMT</pubDate>
+      <category>category-1</category>
+      <category>category-2</category>
     </item>
     <item>
       <title>Second Post</title>

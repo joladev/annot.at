@@ -363,13 +363,21 @@ defmodule AnnotAtWeb.PostsLive do
       path: path_of(entry.url),
       published_at: entry.published_at,
       description: entry.summary,
-      text_content: entry.content,
+      text_content: text_content_of(entry.content),
       cover_image: fetch_cover(entry)
     }
   end
 
   defp path_of(nil), do: nil
   defp path_of(url), do: URI.parse(url).path
+
+  defp text_content_of(nil), do: nil
+
+  defp text_content_of(content) do
+    content
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.text()
+  end
 
   defp create_document(scope, site, entry) do
     document = to_document(entry, site, scope.user)
