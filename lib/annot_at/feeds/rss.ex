@@ -105,6 +105,7 @@ defmodule AnnotAt.Feeds.RSS do
   defp apply_entry_field(entry, "description", text), do: %{entry | summary: text}
   defp apply_entry_field(entry, "content:encoded", text), do: %{entry | content: text}
   defp apply_entry_field(entry, "pubDate", text), do: %{entry | published_at: parse_date(text)}
+  defp apply_entry_field(entry, "atom:updated", text), do: %{entry | updated_at: parse_date(text)}
 
   defp apply_entry_field(entry, "category", text),
     do: %{entry | categories: [text | entry.categories]}

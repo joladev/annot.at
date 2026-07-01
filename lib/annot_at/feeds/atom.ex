@@ -141,7 +141,8 @@ defmodule AnnotAt.Feeds.Atom do
   defp apply_entry_field(entry, "published", text), do: %{entry | published_at: parse_date(text)}
 
   defp apply_entry_field(entry, "updated", text) do
-    %{entry | published_at: entry.published_at || parse_date(text)}
+    updated_at = parse_date(text)
+    %{entry | published_at: entry.published_at || updated_at, updated_at: updated_at}
   end
 
   defp apply_entry_field(entry, _name, _text), do: entry
