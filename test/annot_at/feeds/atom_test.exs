@@ -27,6 +27,7 @@ defmodule AnnotAt.Feeds.AtomTest do
     assert "<p>The full <strong>content</strong>\n    of the first post.</p>" == first.content
     assert %DateTime{} = first.published_at
     assert ~U[2024-10-02 13:00:00Z] == first.published_at
+    assert ["category-1", "category-2"] = first.categories
   end
 
   test "falls back to URL as ID when id is missing" do

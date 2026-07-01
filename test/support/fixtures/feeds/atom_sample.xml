@@ -17,6 +17,8 @@
     of the first post.&lt;/p&gt;</content>
         <published>2024-10-02T13:00:00Z</published>
         <updated>2024-10-03T09:00:00Z</updated>
+        <category term="category-1" />
+        <category term="category-2" />
     </entry>
     <entry>
         <title>Second Post</title>

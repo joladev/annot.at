@@ -48,7 +48,7 @@ defmodule AnnotAt.Feeds.Atom do
     {:ok,
      %{
        state
-       | entries: [%Entry{} | state.entries],
+       | entries: [%Entry{categories: []} | state.entries],
          stack: ["entry" | state.stack],
          current_text: []
      }}
@@ -57,6 +57,11 @@ defmodule AnnotAt.Feeds.Atom do
   def handle_event(:start_element, {"link", attrs}, state) do
     state = apply_link(state, List.first(state.stack), attrs)
     {:ok, %{state | stack: ["link" | state.stack], current_text: []}}
+  end
+
+  def handle_event(:start_element, {"category", attrs}, state) do
+    state = apply_category(state, List.first(state.stack), attrs)
+    {:ok, %{state | stack: ["category" | state.stack], current_text: []}}
   end
 
   def handle_event(:start_element, {name, _attrs}, state) do
@@ -116,6 +121,19 @@ defmodule AnnotAt.Feeds.Atom do
     end
   end
 
+  defp apply_category(state, "entry", attrs) do
+    case Map.new(attrs) do
+      %{"term" => term} ->
+        [current | entries] = state.entries
+        %{state | entries: [%{current | categories: [term | current.categories]} | entries]}
+
+      _ ->
+        state
+    end
+  end
+
+  defp apply_category(state, _parent, _attrs), do: state
+
   defp apply_entry_field(entry, "title", text), do: %{entry | title: text}
   defp apply_entry_field(entry, "id", text), do: %{entry | id: text}
   defp apply_entry_field(entry, "summary", text), do: %{entry | summary: text}
@@ -132,11 +150,16 @@ defmodule AnnotAt.Feeds.Atom do
   defp apply_feed_field(feed, "subtitle", text), do: %{feed | description: text}
   defp apply_feed_field(feed, _name, _text), do: feed
 
-  defp finalize_entry(%Entry{id: nil, url: url} = entry) when is_binary(url) do
-    %{entry | id: url}
-  end
+  defp finalize_entry(%Entry{} = entry) do
+    id =
+      if is_nil(entry.id) and is_binary(entry.url) do
+        entry.url
+      else
+        entry.id
+      end
 
-  defp finalize_entry(entry), do: entry
+    %{entry | id: id, categories: Enum.reverse(entry.categories)}
+  end
 
   defp text(parts) do
     result =
