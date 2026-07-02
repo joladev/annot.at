@@ -4,18 +4,29 @@
 
 A service for automatically publishing content to the Atmosphere, using the standard.site lexicon. Register your publication and a discovery mechanism, and your content is automatically published.
 
-Requires your site to have a `link rel=alternate` for a feed set, and that you're able to verify your ownership by serving a `/.well-known` file.
+Stay up to date on development at [blog.annot.at](https://blog.annot.at).
 
-Document rkeys are derived from the post `<link rel="site.standard.document" href="<aturi>"`, so your blog must set that up. Document rkeys have to be TIDs to be valid, and should be stable, so either generate them and store them in your blog post fronmatter/metadata, or use a deterministic implementation that can run multiple times for the same post and give the same result.
+## How it works
+
+[annot.at](https://annot.at) enables you to log in using your atproto account, whether that's Bluesky, Eurosky, or your own PDS. it will ask for permission to write to the standard.site lexicon on your behalf.
+
+The app uses a few different things from your blog to accomplish this, and it requires some setup:
+
+1. During the site setup wizard we generate a record key for your publication if you don't have one yet, you will get instructions to host this key in your site under `/.well-known/site.standard.publication`.
+2. You need a well-formed RSS or Atom feed that contains your posts.
+3. Each page that you want to upload needs to have a `<link rel="site.standard.document" href="<at-uri>"` field set, this is what eg Bluesky uses to validate the standard.site document.
+
+Document rkeys have to be TIDs to be valid, and need to be stable, so either generate them and store them in your blog post fronmatter/metadata, or use a deterministic implementation that can run multiple times for the same post and give the same result.
+
+annot.at will use information from your blog to publish your documents. From the feed it gets title, description, content, tags, and published_at. From the blog post page itself it gets the open graph image and the record key.
 
 ## TODO
 
 - [x] Sign up/sign in with Bluesky
 - [x] Maybe some design?
 - [x] Add site including verification
-- [ ] Write a guide for using this
 - [x] Document cover images
-- [ ] Document content with html content type
+- [x] Document content with html content type
 - [ ] RSS poller
 - [ ] standard.site document reader
 - [ ] Post to Bluesky
