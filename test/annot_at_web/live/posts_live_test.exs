@@ -38,7 +38,8 @@ defmodule AnnotAtWeb.PostsLiveTest do
           title: title,
           published_at: ~U[2024-10-02 13:00:00Z],
           summary: "a summary",
-          content: "the body"
+          content: "the body",
+          categories: ["category"]
         }
       ]
     }
@@ -61,6 +62,7 @@ defmodule AnnotAtWeb.PostsLiveTest do
       assert user_id == user.id
       assert title == document.title
       assert document.rkey =~ ~r/^[234567abcdefghij]/
+      assert ["category"] = document.tags
       {:ok, %{"uri" => "at://x"}}
     end)
 

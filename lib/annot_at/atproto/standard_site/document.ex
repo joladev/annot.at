@@ -11,6 +11,7 @@ defmodule AnnotAt.Atproto.StandardSite.Document do
     :updated_at,
     :description,
     :text_content,
+    :content,
     :tags,
     :cover_image
   ]
@@ -24,6 +25,7 @@ defmodule AnnotAt.Atproto.StandardSite.Document do
           updated_at: DateTime.t() | nil,
           description: String.t() | nil,
           text_content: String.t() | nil,
+          content: String.t() | nil,
           tags: [String.t()] | nil,
           cover_image: {binary(), String.t()} | nil
         }

@@ -364,7 +364,9 @@ defmodule AnnotAtWeb.PostsLive do
       published_at: entry.published_at,
       description: entry.summary,
       text_content: text_content_of(entry.content),
-      cover_image: fetch_cover(entry)
+      content: entry.content,
+      cover_image: fetch_cover(entry),
+      tags: entry.categories
     }
   end
 

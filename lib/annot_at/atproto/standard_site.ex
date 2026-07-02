@@ -13,6 +13,8 @@ defmodule AnnotAt.Atproto.StandardSite do
   @publication "site.standard.publication"
   @document "site.standard.document"
   @wellknown_path "/.well-known/site.standard.publication"
+  @html_content "org.wordpress.html"
+  @html_max_graphemes 100_000
 
   @doc """
   Creates or updates the user's publication record.
@@ -161,6 +163,7 @@ defmodule AnnotAt.Atproto.StandardSite do
     |> put_optional("updatedAt", iso8601(d.updated_at))
     |> put_optional("description", d.description)
     |> put_optional("textContent", d.text_content)
+    |> put_optional("content", to_content(d.content))
     |> put_optional("tags", d.tags)
     |> put_optional("coverImage", cover_image)
   end
@@ -189,5 +192,22 @@ defmodule AnnotAt.Atproto.StandardSite do
       |> List.last()
 
     %{rkey: rkey, url: value["url"], name: value["name"]}
+  end
+
+  defp to_content(nil), do: nil
+
+  defp to_content(content) do
+    %{
+      "$type" => @html_content,
+      "html" => truncate_graphemes(content, @html_max_graphemes)
+    }
+  end
+
+  defp truncate_graphemes(text, max) do
+    if String.length(text) <= max do
+      text
+    else
+      String.slice(text, 0, max)
+    end
   end
 end
