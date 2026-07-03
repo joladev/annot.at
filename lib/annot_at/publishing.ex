@@ -83,6 +83,12 @@ defmodule AnnotAt.Publishing do
     |> Repo.update()
   end
 
+  def delete_site(%Scope{user: %User{id: user_id}}, %Site{} = site) do
+    verify_user_ownership!(site, user_id)
+
+    Repo.delete(site)
+  end
+
   def list_posts(%Site{id: site_id}) do
     Repo.all(from p in Post, where: p.site_id == ^site_id, order_by: [desc: p.inserted_at])
   end

@@ -58,7 +58,7 @@ defmodule AnnotAtWeb.SitesLive do
 
   @impl Phoenix.LiveView
   def handle_event("filter", %{"status" => status}, socket) do
-    {:noreply, assign(socket, filter: String.to_existing_atom(status))}
+    {:noreply, assign(socket, filter: status)}
   end
 
   defp filter_sites(sites, "all"), do: sites

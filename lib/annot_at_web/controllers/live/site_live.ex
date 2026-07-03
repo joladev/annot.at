@@ -25,21 +25,29 @@ defmodule AnnotAtWeb.SiteLive do
         <h1 class="font-display text-3xl font-bold
      tracking-tight">{@site.url}</h1>
 
-        <div :if={phase(@site) == :done} class="flex items-center gap-3">
-          <span class="inline-flex items-center gap-1.5 rounded-full border-2
-     border-ink bg-paper px-3 py-1.5 text-sm font-bold">
+        <div class="flex items-center gap-3">
+          <span
+            :if={phase(@site) == :done}
+            class="inline-flex items-center gap-1.5 rounded-full border-2
+     border-ink bg-paper px-3 py-1.5 text-sm font-bold"
+          >
             <.icon name="hero-check-badge" class="size-5 text-green-600" /> Verified
           </span>
-          <button
-            :if={is_nil(@site.published_at)}
+          <.button
+            :if={is_nil(@site.published_at) and phase(@site) == :done}
             phx-click="open_publish"
-            class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl
-     border-2 border-ink bg-ink px-5 py-2.5 text-sm font-bold text-paper
-     shadow-[4px_4px_0px_0px_var(--color-peach-bold)] transition-all
-     hover:-translate-y-0.5 active:translate-y-0"
+            variant="primary"
+            shadow="secondary"
           >
             <.icon name="hero-paper-airplane" class="size-5" /> Publish
-          </button>
+          </.button>
+          <.button
+            phx-click="disconnect"
+            data-confirm="Disconnect this site? annot.at deletes its local data and stops stracking it. Your publication and documents stay in your PDS."
+            variant="danger"
+          >
+            <.icon name="hero-trash" class="size-4" /> Disconnect
+          </.button>
         </div>
       </div>
 
@@ -221,6 +229,17 @@ defmodule AnnotAtWeb.SiteLive do
 
         {:noreply, socket}
     end
+  end
+
+  def handle_event("disconnect", _params, socket) do
+    {:ok, _site} = Publishing.delete_site(socket.assigns.current_scope, socket.assigns.site)
+
+    socket =
+      socket
+      |> put_flash(:info, "Site disconnected.")
+      |> push_navigate(to: ~p"/sites")
+
+    {:noreply, socket}
   end
 
   defp phase(%Site{verified_at: %DateTime{}}), do: :done

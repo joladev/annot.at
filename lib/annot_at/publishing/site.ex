@@ -46,7 +46,7 @@ defmodule AnnotAt.Publishing.Site do
     |> foreign_key_constraint(:user_id)
   end
 
-  def status(%__MODULE__{published_at: %DateTime{}}), do: :published
-  def status(%__MODULE__{verified_at: %DateTime{}}), do: :verified
-  def status(%__MODULE__{}), do: :draft
+  def status(%__MODULE__{published_at: %DateTime{}}), do: "published"
+  def status(%__MODULE__{verified_at: %DateTime{}}), do: "verified"
+  def status(%__MODULE__{}), do: "draft"
 end

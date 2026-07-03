@@ -91,7 +91,7 @@ defmodule AnnotAtWeb.CoreComponents do
   value disabled)
   attr :class, :any, default: nil
   attr :variant, :string, default: "ghost", values: ~w(primary secondary accent
-  ghost)
+  ghost danger)
   attr :shadow, :string, default: nil
   attr :size, :string, default: "md", values: ~w(sm md lg)
   slot :inner_block, required: true
@@ -101,7 +101,8 @@ defmodule AnnotAtWeb.CoreComponents do
       "primary" => "bg-ink text-paper",
       "secondary" => "bg-peach-bold text-ink",
       "accent" => "bg-sky-bold text-ink",
-      "ghost" => "bg-paper text-ink hover:bg-ink/5"
+      "ghost" => "bg-paper text-ink hover:bg-ink/5",
+      "danger" => "bg-paper hover:text-red-600 hover:bg-red-50"
     }
 
     shadows = %{
@@ -119,10 +120,7 @@ defmodule AnnotAtWeb.CoreComponents do
 
     assigns =
       assign(assigns, :class, [
-        "inline-flex cursor-pointer items-center justify-center gap-1.5
-  rounded-xl border-2 border-ink font-bold transition-all hover:-translate-y-0.5
-  active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50
-  disabled:shadow-none disabled:hover:translate-y-0",
+        "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border-2 border-ink font-bold transition-all active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none",
         Map.fetch!(sizes, assigns[:size]),
         Map.fetch!(variants, assigns[:variant]),
         Map.fetch!(shadows, assigns[:shadow]),

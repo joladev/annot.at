@@ -42,7 +42,7 @@ defmodule AnnotAtWeb.SiteComponents do
       @status == :verified && "bg-sky-light",
       @status == :published && "bg-sky-bold"
     ]}>
-      {@status |> Atom.to_string() |> String.capitalize()}
+      {String.capitalize(@status)}
     </span>
     """
   end
