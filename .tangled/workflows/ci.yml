@@ -1,0 +1,35 @@
+when:
+  - event: ["push", "pull_request"]
+    branch: ["main"]
+
+engine: microvm
+image: nixos
+
+dependencies:
+  - beam29Packages.elixir_1_20
+  - beam29Packages.erlang
+
+services:
+  postgresql:
+    enable: true
+    enableTCPIP: true
+    authentication: |
+      host all all 127.0.0.1/32 trust
+      host all all ::1/128 trust
+
+steps:
+  - name: setup
+    command: |
+      mix local.hex --force
+      mix local.rebar --force
+      mix deps.get
+  - name: compile
+    command: mix compile --warnings-as-errors
+  - name: format
+    command: mix format --check-formatted
+  - name: credo
+    command: mix credo --strict
+  - name: test
+    command: mix test --warnings-as-errors
+  - name: unused
+    command: mix deps.unlock --check-unused
