@@ -126,6 +126,13 @@ defmodule AnnotAt.Atproto.StandardSite do
     }
   end
 
+  @doc """
+  Construct an at-uri for a document, useful when referencing documents.
+  """
+  def document_uri(did, rkey) do
+    "at://#{did}/site.standard.document/#{rkey}"
+  end
+
   defp fetch_user(user_id) do
     case Accounts.get_user(user_id) do
       nil -> {:error, :no_session}

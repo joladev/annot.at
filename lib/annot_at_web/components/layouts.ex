@@ -80,9 +80,7 @@ defmodule AnnotAtWeb.Layouts do
 
       <aside
         id="sidebar"
-        class="fixed inset-y-0 left-0 z-50 flex w-60 -translate-x-full flex-col
-    border-r-2 border-ink bg-paper p-4 transition-transform duration-200 lg:static
-    lg:z-auto lg:translate-x-0"
+        class="fixed inset-y-0 left-0 z-50 flex w-60 -translate-x-full flex-col border-r-2 border-ink bg-paper p-4 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:overflow-y-auto lg:z-auto lg:translate-x-0"
       >
         <div class="flex items-center justify-between">
           <.link
@@ -149,9 +147,15 @@ defmodule AnnotAtWeb.Layouts do
             </div>
           </div>
           <.link
+            class="block px-3 my-1.5 text-[10px] text-ink/30 font-mono"
+            href={AnnotAt.Atproto.inspect_url(@current_scope.user.did)}
+          >
+            {@current_scope.user.did}
+          </.link>
+          <.link
             href={~p"/logout"}
             method="delete"
-            class="block px-3 py-1.5 text-[11px] font-bold uppercase
+            class="block px-3 py-1.5 text-[11px] font-bold
     tracking-widest text-ink/45 hover:text-ink"
           >
             Sign out

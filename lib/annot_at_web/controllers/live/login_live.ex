@@ -24,7 +24,13 @@ defmodule AnnotAtWeb.LoginLive do
             Enter your atproto handle to Publish to the ATmosphere.
           </p>
 
-          <.form for={@form} phx-change="suggest" phx-submit="login" class="mt-6 space-y-4">
+          <.form
+            for={@form}
+            id="login-form"
+            phx-change="suggest"
+            phx-submit="login"
+            class="mt-6 space-y-4"
+          >
             <div
               id="handle-combobox"
               class="relative"

@@ -58,7 +58,7 @@ defmodule AnnotAtWeb.SiteLive do
                 class="size-5 transition-transform group-hover:translate-x-1"
               />
             </.link>
-            <.site_cards site={@site} record={@record} feed={@feed} />
+            <.site_cards site={@site} record={@record} feed={@feed} did={@current_scope.user.did} />
           <% :feed -> %>
             <.feed_step feeds={@feeds} />
           <% :publication -> %>
@@ -86,8 +86,7 @@ defmodule AnnotAtWeb.SiteLive do
                 site…</p>
             </:loading>
             <:failed :let={_}>
-              <p class="mt-4 text-sm font-bold text-red-600">Couldn't read your
-                site.</p>
+              <p class="mt-4 text-sm font-bold text-red-600">Couldn't read your site.</p>
             </:failed>
 
             <div class="mt-4 rounded-xl border-2 border-ink bg-sky-light p-4">
@@ -557,16 +556,21 @@ defmodule AnnotAtWeb.SiteLive do
   end
 
   attr :label, :string, required: true
-  attr :value, :string, default: nil
+  attr :value, :string, required: true
+  attr :href, :string, default: nil
 
   defp record_field(assigns) do
     ~H"""
     <div>
-      <dt class="text-xs font-bold uppercase tracking-wide
-    text-ink/45">{@label}</dt>
-      <dd :if={@value} class="break-all font-medium">{@value}</dd>
-      <dd :if={is_nil(@value)} class="text-sm italic text-ink/40">Not set
-        yet</dd>
+      <dt class="text-xs font-bold uppercase tracking-wide text-ink/45">{@label}</dt>
+      <dd :if={@value} class="break-all font-medium">
+        <%= if @href do %>
+          <.link class="underline" href={@href}>{@value}</.link>
+        <% else %>
+          {@value}
+        <% end %>
+      </dd>
+      <dd :if={is_nil(@value)} class="text-sm italic text-ink/40">Not set yet</dd>
     </div>
     """
   end
@@ -574,6 +578,7 @@ defmodule AnnotAtWeb.SiteLive do
   attr :site, :map, required: true
   attr :record, :any, required: true
   attr :feed, :any, required: true
+  attr :did, :string, required: true
 
   defp site_cards(assigns) do
     ~H"""
@@ -582,8 +587,7 @@ defmodule AnnotAtWeb.SiteLive do
         <:badge>
           <span
             :if={@feed.ok?}
-            class="inline-flex items-center gap-1 rounded-full border-2
-    border-ink bg-paper px-2.5 py-0.5 text-xs font-bold text-ink/60"
+            class="inline-flex items-center gap-1 rounded-full border-2 border-ink bg-paper px-2.5 py-0.5 text-xs font-bold text-ink/60"
           >
             <.icon name="hero-clock" class="size-3.5" /> Checked just now
           </span>
@@ -654,7 +658,15 @@ defmodule AnnotAtWeb.SiteLive do
           </:failed>
 
           <dl class="space-y-3">
-            <.record_field label="rkey" value={@site.rkey} />
+            <.record_field
+              label="rkey"
+              value={@site.rkey}
+              href={
+                AnnotAt.Atproto.inspect_url(
+                  AnnotAt.Atproto.StandardSite.publication_uri(@did, @site.rkey)
+                )
+              }
+            />
             <.record_field label="Name" value={record["name"]} />
             <.record_field label="URL" value={record["url"]} />
             <.record_field label="Description" value={record["description"]} />
