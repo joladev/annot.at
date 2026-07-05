@@ -42,7 +42,7 @@ defmodule AnnotAtWeb.DocumentComponents do
         </span>
       </div>
 
-      <div class="mt-8 space-y-4 leading-relaxed text-ink/85">
+      <div class="doc-prose mt-8">
         <%= case @doc["content"] do %>
           <% %{"$type" => "org.wordpress.html", "html" => html} -> %>
             {raw(sanitize(html))}
@@ -54,7 +54,11 @@ defmodule AnnotAtWeb.DocumentComponents do
     """
   end
 
-  defp sanitize(html), do: HtmlSanitizeEx.markdown_html(html)
+  defp sanitize(html) do
+    html
+    |> HtmlSanitizeEx.markdown_html()
+    |> String.replace(~r{</?span>}, "")
+  end
 
   defp preview(nil), do: nil
   defp preview(text) when byte_size(text) <= 280, do: text

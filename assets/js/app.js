@@ -24,6 +24,10 @@ import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import { hooks as colocatedHooks } from "phoenix-colocated/annot_at";
 import topbar from "../vendor/topbar";
+import hljs from "highlight.js/lib/common";
+import elixir from "highlight.js/lib/languages/elixir";
+
+hljs.registerLanguage("elixir", elixir);
 
 const csrfToken = document
   .querySelector("meta[name='csrf-token']")
@@ -89,3 +93,9 @@ if (process.env.NODE_ENV === "development") {
     },
   );
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".doc-prose pre code").forEach((el) => {
+    hljs.highlightElement(el);
+  });
+});

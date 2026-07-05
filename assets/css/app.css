@@ -2,6 +2,8 @@
 https://tailwindcss.com/docs/configuration */
 
 @import "tailwindcss" source(none);
+@import "highlight.js/styles/github-dark.css";
+
 @source "../css";
 @source "../js";
 @source "../../lib/annot_at_web";
@@ -12,97 +14,108 @@ https://tailwindcss.com/docs/configuration */
 
 /* daisyUI Tailwind Plugin. */
 @plugin "../vendor/daisyui" {
-  themes: false;
+    themes: false;
 }
 
 /* Self-hosted variable fonts (latin, weight axis). Syne has no italic axis,
   so italic renders as a synthesized oblique, matching the prototype. */
 @font-face {
-  font-family: "Syne";
-  font-style: normal;
-  font-display: swap;
-  font-weight: 400 800;
-  src: url("/fonts/syne-latin-wght-normal.woff2") format("woff2");
+    font-family: "Syne";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 400 800;
+    src: url("/fonts/syne-latin-wght-normal.woff2") format("woff2");
 }
 
 @font-face {
-  font-family: "Plus Jakarta Sans";
-  font-style: normal;
-  font-display: swap;
-  font-weight: 200 800;
-  src: url("/fonts/plus-jakarta-sans-latin-wght-normal.woff2") format("woff2");
+    font-family: "Plus Jakarta Sans";
+    font-style: normal;
+    font-display: swap;
+    font-weight: 200 800;
+    src: url("/fonts/plus-jakarta-sans-latin-wght-normal.woff2") format("woff2");
 }
 
 /* Brand theme: source of truth for the palette + the utilities the landing
   page uses (bg-paper, text-ink, bg-sky-bold, font-display, animate-float). */
 @theme {
-  --color-paper: #fdfcfb;
-  --color-ink: #1a1a1a;
-  --color-sky-light: #e0f2fe;
-  --color-sky-bold: #7dd3fc;
-  --color-peach-light: #fecaca;
-  --color-peach-bold: #f9a8a8;
+    --color-paper: #fdfcfb;
+    --color-ink: #1a1a1a;
+    --color-sky-light: #e0f2fe;
+    --color-sky-bold: #7dd3fc;
+    --color-peach-light: #fecaca;
+    --color-peach-bold: #f9a8a8;
 
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Syne", ui-sans-serif, system-ui, sans-serif;
+    --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Syne", ui-sans-serif, system-ui, sans-serif;
 
-  --animate-float: float 6s ease-in-out infinite;
-  --animate-entrance: entrance 0.8s ease-out both;
+    --animate-float: float 6s ease-in-out infinite;
+    --animate-entrance: entrance 0.8s ease-out both;
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0) rotate(-1deg); }
-    50% { transform: translateY(-8px) rotate(1deg); }
-  }
+    @keyframes float {
+        0%,
+        100% {
+            transform: translateY(0) rotate(-1deg);
+        }
+        50% {
+            transform: translateY(-8px) rotate(1deg);
+        }
+    }
 
-  @keyframes entrance {
-    0% { opacity: 0; transform: translateY(20px) rotate(-2deg); }
-    100% { opacity: 1; transform: translateY(0) rotate(0); }
-  }
+    @keyframes entrance {
+        0% {
+            opacity: 0;
+            transform: translateY(20px) rotate(-2deg);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) rotate(0);
+        }
+    }
 }
 
 /* Respect reduced-motion preferences. */
 @media (prefers-reduced-motion: reduce) {
-  .animate-float,
-  .animate-entrance {
-    animation: none;
-  }
+    .animate-float,
+    .animate-entrance {
+        animation: none;
+    }
 }
 
 /* daisyUI light theme, recolored to the brand palette so forms and flashes
   stay consistent with the landing page. */
 @plugin "../vendor/daisyui-theme" {
-  name: "light";
-  default: true;
-  prefersdark: false;
-  color-scheme: "light";
-  --color-base-100: #fdfcfb;
-  --color-base-200: #f6f4f1;
-  --color-base-300: #eae6e1;
-  --color-base-content: #1a1a1a;
-  --color-primary: #1a1a1a;
-  --color-primary-content: #fdfcfb;
-  --color-secondary: #f9a8a8;
-  --color-secondary-content: #1a1a1a;
-  --color-accent: #7dd3fc;
-  --color-accent-content: #1a1a1a;
-  --color-neutral: #1a1a1a;
-  --color-neutral-content: #fdfcfb;
-  --color-info: oklch(58% 0.158 241.966);
-  --color-info-content: oklch(97% 0.013 236.62);
-  --color-success: oklch(60% 0.118 184.704);
-  --color-success-content: oklch(98% 0.014 180.72);
-  --color-warning: oklch(66% 0.179 58.318);
-  --color-warning-content: oklch(98% 0.022 95.277);
-  --color-error: oklch(58% 0.253 17.585);
-  --color-error-content: oklch(96% 0.015 12.422);
-  --radius-selector: 0.625rem;
-  --radius-field: 0.625rem;
-  --radius-box: 1rem;
-  --size-selector: 0.21875rem;
-  --size-field: 0.21875rem;
-  --border: 1.5px;
-  --depth: 1;
-  --noise: 0;
+    name: "light";
+    default: true;
+    prefersdark: false;
+    color-scheme: "light";
+    --color-base-100: #fdfcfb;
+    --color-base-200: #f6f4f1;
+    --color-base-300: #eae6e1;
+    --color-base-content: #1a1a1a;
+    --color-primary: #1a1a1a;
+    --color-primary-content: #fdfcfb;
+    --color-secondary: #f9a8a8;
+    --color-secondary-content: #1a1a1a;
+    --color-accent: #7dd3fc;
+    --color-accent-content: #1a1a1a;
+    --color-neutral: #1a1a1a;
+    --color-neutral-content: #fdfcfb;
+    --color-info: oklch(58% 0.158 241.966);
+    --color-info-content: oklch(97% 0.013 236.62);
+    --color-success: oklch(60% 0.118 184.704);
+    --color-success-content: oklch(98% 0.014 180.72);
+    --color-warning: oklch(66% 0.179 58.318);
+    --color-warning-content: oklch(98% 0.022 95.277);
+    --color-error: oklch(58% 0.253 17.585);
+    --color-error-content: oklch(96% 0.015 12.422);
+    --radius-selector: 0.625rem;
+    --radius-field: 0.625rem;
+    --radius-box: 1rem;
+    --size-selector: 0.21875rem;
+    --size-field: 0.21875rem;
+    --border: 1.5px;
+    --depth: 1;
+    --noise: 0;
 }
 
 /* Add variants based on LiveView classes */
@@ -111,6 +124,116 @@ https://tailwindcss.com/docs/configuration */
 @custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
 
 /* Make LiveView wrapper divs transparent for layout */
-[data-phx-session], [data-phx-teleported-src] { display: contents }
+[data-phx-session],
+[data-phx-teleported-src] {
+    display: contents;
+}
 
 /* This file is for your main application CSS */
+
+/* Rendered document content — sanitized blog HTML, no per-element classes. */
+.doc-prose {
+    line-height: 1.7;
+    color: color-mix(in oklab, var(--color-ink) 88%, transparent);
+}
+.doc-prose > * + * {
+    margin-top: 1rem;
+}
+
+.doc-prose h2,
+.doc-prose h3,
+.doc-prose h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--color-ink);
+}
+.doc-prose h2 {
+    font-size: 1.5rem;
+    margin-top: 2.5rem;
+}
+.doc-prose h3 {
+    font-size: 1.25rem;
+    margin-top: 2rem;
+}
+.doc-prose h4 {
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+}
+
+.doc-prose a {
+    color: var(--color-ink);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: var(--color-peach-bold);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+}
+.doc-prose a:hover {
+    background: var(--color-peach-light);
+}
+
+.doc-prose ul {
+    list-style: disc;
+    padding-left: 1.5rem;
+}
+.doc-prose ol {
+    list-style: decimal;
+    padding-left: 1.5rem;
+}
+.doc-prose li {
+    margin-top: 0.375rem;
+}
+
+.doc-prose blockquote {
+    border-left: 3px solid var(--color-ink);
+    padding-left: 1rem;
+    font-style: italic;
+    color: color-mix(in oklab, var(--color-ink) 65%, transparent);
+}
+
+/* inline code */
+.doc-prose code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.875em;
+    background: var(--color-sky-light);
+    border: 1.5px solid var(--color-ink);
+    border-radius: 0.375rem;
+    padding: 0.1em 0.35em;
+}
+
+/* code blocks */
+.doc-prose pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.875rem;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+}
+.doc-prose pre code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+}
+
+.doc-prose img {
+    max-width: 100%;
+    height: auto;
+    border: 2px solid var(--color-ink);
+    border-radius: 0.75rem;
+}
+
+.doc-prose hr {
+    border: 0;
+    border-top: 2px solid color-mix(in oklab, var(--color-ink) 15%, transparent);
+    margin: 2rem 0;
+}
+
+.doc-prose strong {
+    font-weight: 700;
+    color: var(--color-ink);
+}
