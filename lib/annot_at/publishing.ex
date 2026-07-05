@@ -93,6 +93,10 @@ defmodule AnnotAt.Publishing do
     Repo.all(from p in Post, where: p.site_id == ^site_id, order_by: [desc: p.inserted_at])
   end
 
+  def get_post!(%Site{id: site_id}, id) do
+    Repo.get_by!(Post, id: id, site_id: site_id)
+  end
+
   def create_post(%Site{id: site_id}, attrs) do
     %Post{site_id: site_id}
     |> Post.changeset(attrs)

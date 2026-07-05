@@ -14,4 +14,8 @@ defmodule AnnotAt.Atproto do
   def inspect_url(aturi) do
     @inspect_site <> aturi
   end
+
+  def blob_url(pds_host, did, %{"ref" => %{"$link" => cid}}) do
+    "#{pds_host}/xrpc/com.atproto.sync.getBlob?did=#{did}&cid=#{cid}"
+  end
 end

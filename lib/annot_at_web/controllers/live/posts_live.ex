@@ -106,7 +106,7 @@ defmodule AnnotAtWeb.PostsLive do
               {if publishing?(@publishing, entry), do: "Publishing…", else: "Publish"}
             </.button>
             <span :if={not has_date?(entry)} class="flex-none text-xs text-ink/40">No
-            date</span>
+              date</span>
           </div>
         </div>
 
@@ -122,7 +122,12 @@ defmodule AnnotAtWeb.PostsLive do
               <.cover_thumb entry={entry} />
 
               <div class="min-w-0 flex-1">
-                <div class="truncate font-bold text-ink/70">{entry.title}</div>
+                <.link
+                  navigate={~p"/sites/#{@site.id}/posts/#{entry_to_post(@posts, entry).id}"}
+                  class="block truncate font-bold text-ink/70 hover:text-ink"
+                >
+                  {entry.title}
+                </.link>
                 <div :if={entry.summary} class="mt-0.5 truncate text-sm text-ink/50">
                   {entry.summary}
                 </div>

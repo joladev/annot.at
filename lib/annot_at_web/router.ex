@@ -40,6 +40,7 @@ defmodule AnnotAtWeb.Router do
       live "/sites/new", SiteNewLive
       live "/sites/:id", SiteLive
       live "/sites/:id/posts", PostsLive
+      live "/sites/:id/posts/:post_id", PostLive
     end
   end
 

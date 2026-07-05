@@ -27,6 +27,18 @@ defmodule AnnotAt.Atproto.StandardSite do
     end
   end
 
+  def get_document(user_id, rkey) do
+    with {:ok, user} <- fetch_user(user_id),
+         {:ok, %{"value" => value}} <-
+           Client.query(user.id, "com.atproto.repo.getRecord",
+             repo: user.did,
+             collection: @document,
+             rkey: rkey
+           ) do
+      {:ok, value}
+    end
+  end
+
   @doc """
   Creates or updates a document record.
   """
