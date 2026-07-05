@@ -18,6 +18,12 @@ defmodule AnnotAtWeb.Router do
   end
 
   scope "/", AnnotAtWeb do
+    pipe_through :browser
+
+    get "/p/:did/:rkey", PublicPostController, :show
+  end
+
+  scope "/", AnnotAtWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     get "/", PageController, :home

@@ -6,6 +6,7 @@ defmodule AnnotAt.Atproto.StandardSite do
 
   alias AnnotAt.Accounts
   alias AnnotAt.Atproto.HTTP
+  alias AnnotAt.Atproto.Identity
   alias AnnotAt.Atproto.OAuth.Client
   alias AnnotAt.Atproto.StandardSite.Document
   alias AnnotAt.Atproto.StandardSite.Publication
@@ -145,6 +146,24 @@ defmodule AnnotAt.Atproto.StandardSite do
     "at://#{did}/site.standard.document/#{rkey}"
   end
 
+  def get_public_document(did, rkey), do: get_public_record(did, @document, rkey)
+
+  def get_public_publication("at://" <> _ = site_uri) do
+    with {:ok, did, rkey} <- parse_aturi(site_uri, @publication) do
+      get_public_record(did, @publication, rkey)
+    end
+  end
+
+  def get_public_publication(_site), do: {:error, :no_publication}
+
+  def get_public_record(did, collection, rkey) do
+    with {:ok, did_doc} <- Identity.resolve_did(did),
+         url = record_url(did_doc.pds_endpoint, did, collection, rkey),
+         {:ok, %{"value" => value}} <- HTTP.get_json(url) do
+      {:ok, value, did_doc}
+    end
+  end
+
   defp fetch_user(user_id) do
     case Accounts.get_user(user_id) do
       nil -> {:error, :no_session}
@@ -229,4 +248,18 @@ defmodule AnnotAt.Atproto.StandardSite do
       String.slice(text, 0, max)
     end
   end
+
+  defp record_url(pds, did, collection, rkey) do
+    query = URI.encode_query(repo: did, collection: collection, rkey: rkey)
+    "#{pds}/xrpc/com.atproto.repo.getRecord?#{query}"
+  end
+
+  defp parse_aturi("at://" <> rest, collection) do
+    case String.split(rest, "/") do
+      [did, ^collection, rkey] -> {:ok, did, rkey}
+      _ -> {:error, :invalid}
+    end
+  end
+
+  defp parse_aturi(_uri, _collection), do: {:error, :invalid}
 end

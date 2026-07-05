@@ -250,4 +250,17 @@ defmodule AnnotAtWeb.Layouts do
     </div>
     """
   end
+
+  slot :inner_block, required: true
+
+  def public(assigns) do
+    ~H"""
+    <div class="min-h-screen bg-paper text-ink antialiased">
+      <header class="border-b-2 border-ink px-6 py-4">
+        <.link navigate={~p"/"} class="font-display text-xl font-bold tracking-tight">annot.at</.link>
+      </header>
+      <main class="px-6 py-10">{render_slot(@inner_block)}</main>
+    </div>
+    """
+  end
 end

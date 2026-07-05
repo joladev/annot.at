@@ -54,10 +54,16 @@ defmodule AnnotAt.Atproto.Identity do
     with :ok <- validate_handle(handle),
          {:ok, did} <- handle_to_did(handle),
          :ok <- validate_did(did),
-         {:ok, document} <- did_to_document(did),
-         {:ok, parsed} <- DIDDocument.parse(document, did),
+         {:ok, parsed} <- resolve_did(did),
          :ok <- confirm_bidirectional(parsed, handle) do
       {:ok, %__MODULE__{did: did, handle: handle, pds_endpoint: parsed.pds_endpoint}}
+    end
+  end
+
+  @spec resolve_did(String.t()) :: {:ok, DIDDocument.t()} | {:error, term()}
+  def resolve_did(did) when is_binary(did) do
+    with {:ok, doc} <- did_to_document(did) do
+      DIDDocument.parse(doc, did)
     end
   end
 

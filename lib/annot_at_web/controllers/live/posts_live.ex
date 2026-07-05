@@ -106,7 +106,7 @@ defmodule AnnotAtWeb.PostsLive do
               {if publishing?(@publishing, entry), do: "Publishing…", else: "Publish"}
             </.button>
             <span :if={not has_date?(entry)} class="flex-none text-xs text-ink/40">No
-              date</span>
+            date</span>
           </div>
         </div>
 

@@ -17,7 +17,7 @@ defmodule AnnotAtWeb.DocumentComponents do
         :if={@cover_url}
         src={@cover_url}
         alt={@doc["title"]}
-        class="aspect-[1.91/1] w-full rounded-2dxl border-2 border-ink object-cover"
+        class="aspect-[1.91/1] w-full rounded-2xl border-2 border-ink object-cover"
       />
 
       <h1 class="mt-6 font-display text-4xl font-bold tracking-tight">{@doc["title"]}</h1>
@@ -30,7 +30,7 @@ defmodule AnnotAtWeb.DocumentComponents do
         />
         <span class="font-bold text-ink/75">{@author.display_name || @author.handle}</span>
         <span aria-hidden="true">-</span>
-        <time :if={@doc["published_at"]}>{format_date(@doc["published_at"])}</time>
+        <time :if={@doc["publishedAt"]}>{format_date(@doc["publishedAt"])}</time>
       </div>
 
       <div :if={@doc["tags"] not in [nil, []]} class="mt-4 flex flex-wrap gap-2">
