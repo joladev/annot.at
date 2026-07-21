@@ -8,7 +8,6 @@ defmodule AnnotAt.Accounts.User do
           handle: String.t(),
           display_name: String.t(),
           avatar_url: String.t(),
-          pds_host: String.t(),
           handle_verified_at: DateTime.t()
         }
 
@@ -21,12 +20,8 @@ defmodule AnnotAt.Accounts.User do
     field :display_name, :string
     # Same
     field :avatar_url, :string
-    # Cached PDS URL from DID resolution
-    field :pds_host, :string
     # Last bidirectional handle↔DID check
     field :handle_verified_at, :utc_datetime
-
-    has_one :atproto_session, AnnotAt.Accounts.AtprotoSession
 
     timestamps(type: :utc_datetime)
   end
@@ -38,7 +33,6 @@ defmodule AnnotAt.Accounts.User do
       :handle,
       :display_name,
       :avatar_url,
-      :pds_host,
       :handle_verified_at
     ])
     |> validate_required([:did])
@@ -46,7 +40,6 @@ defmodule AnnotAt.Accounts.User do
     |> validate_length(:handle, max: 255)
     |> validate_length(:display_name, max: 255)
     |> validate_length(:avatar_url, max: 2048)
-    |> validate_length(:pds_host, max: 255)
     |> unique_constraint(:did)
   end
 end

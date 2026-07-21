@@ -55,8 +55,7 @@ if config_env() == :prod do
 
   host = System.get_env("PHX_HOST") || "example.com"
 
-  config :annot_at, AnnotAt.Atproto.OAuth.Config,
-    signing_jwk: System.fetch_env!("ATPROTO_CLIENT_PRIVATE_JWK")
+  config :annot_at, AnnotAt.Latch, signing_key: System.fetch_env!("ATPROTO_CLIENT_PRIVATE_JWK")
 
   config :annot_at, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
@@ -78,3 +77,31 @@ if config_env() == :prod do
          tag: "AES.GCM.V1", key: Base.decode64!(System.fetch_env!("CLOAK_KEY"))}
     ]
 end
+
+# Help I can't find a better way of doing this. I want the full app URL from
+# AnnotAtWeb.Endpoint.url() but at config time, without having to duplicate it.
+# I can't call that function because it uses persistent_term and it's not
+# populated until after the Endpoint is started. Awkward.
+url_config = Application.get_env(:annot_at, AnnotAtWeb.Endpoint)[:url] || []
+http_config = Application.get_env(:annot_at, AnnotAtWeb.Endpoint)[:http] || []
+
+host = Keyword.get(url_config, :host, "localhost")
+scheme = Keyword.get(url_config, :scheme, "http")
+
+port =
+  Keyword.get(
+    url_config,
+    :port,
+    Keyword.get(http_config, :port, if(scheme == "https", do: 443, else: 80))
+  )
+
+base_url =
+  if (scheme == "https" and port == 443) or (scheme == "http" and port == 80) do
+    "#{scheme}://#{host}"
+  else
+    "#{scheme}://#{host}:#{port}"
+  end
+
+config :annot_at, AnnotAt.Latch,
+  client_id: base_url <> "/oauth-client-metadata.json",
+  redirect_uri: base_url <> "/auth/callback"

@@ -73,7 +73,8 @@ defmodule AnnotAt.MixProject do
       {:cloak_ecto, "~> 1.3"},
       {:saxy, "~> 1.6"},
       {:date_time_parser, "~> 1.3"},
-      {:html_sanitize_ex, "~> 1.4"}
+      {:html_sanitize_ex, "~> 1.4"},
+      {:latch, "~> 0.1"}
     ]
   end
 

@@ -24,34 +24,17 @@ defmodule AnnotAt.Accounts do
     Repo.get_by(User, did: did)
   end
 
-  @spec get_atproto_session(integer()) :: AtprotoSession.t() | nil
-  def get_atproto_session(user_id) do
-    Repo.get_by(AtprotoSession, user_id: user_id)
-  end
-
-  @doc """
-  Creates or updates a user and their atproto session for a login.
-
-  The user is matches by DID and its cached fields refreshed. The session is
-  one-per-user and fully replaced. Wrapped in a transaction so a login never
-  leaves a user without its session.
-  """
-  @spec upsert_login(map(), map()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
-  def upsert_login(user_attrs, session_attrs) do
-    Repo.transact(fn ->
-      with {:ok, user} <- upsert_user(user_attrs),
-           {:ok, session} <- upsert_session(user.id, session_attrs) do
-        {:ok, %{user | atproto_session: session}}
-      end
-    end)
+  @spec get_atproto_session(String.t()) :: AtprotoSession.t() | nil
+  def get_atproto_session(did) do
+    Repo.get_by(AtprotoSession, did: did)
   end
 
   @doc """
   Deletes a user's atproto session (logout), keeping the user record.
   """
-  @spec delete_atproto_session(User.t()) :: :ok
-  def delete_atproto_session(%User{id: user_id}) do
-    Repo.delete_all(from(s in AtprotoSession, where: s.user_id == ^user_id))
+  @spec delete_atproto_session(String.t()) :: :ok
+  def delete_atproto_session(did) do
+    Repo.delete_all(from(s in AtprotoSession, where: s.did == ^did))
     :ok
   end
 
@@ -64,13 +47,13 @@ defmodule AnnotAt.Accounts do
     )
   end
 
-  @spec upsert_session(integer(), map()) ::
+  @spec upsert_session(String.t(), map()) ::
           {:ok, AtprotoSession.t()} | {:error, Ecto.Changeset.t()}
-  def upsert_session(user_id, session_attrs) do
+  def upsert_session(did, session_attrs) do
     Repo.insert(
-      AtprotoSession.changeset(%AtprotoSession{user_id: user_id}, session_attrs),
-      on_conflict: {:replace_all_except, [:id, :user_id, :inserted_at]},
-      conflict_target: :user_id,
+      AtprotoSession.changeset(%AtprotoSession{did: did}, session_attrs),
+      on_conflict: {:replace_all_except, [:id, :did, :inserted_at]},
+      conflict_target: :did,
       returning: true
     )
   end
@@ -110,19 +93,19 @@ defmodule AnnotAt.Accounts do
   end
 
   @doc """
-  Runs fun with a user and their atproto session under a `FOR UPDATE` row
-  lock, inside a transaction. How we do token refresh.
+  Runs fun with a did under a `FOR UPDATE` row lock, inside a transaction.
+  How we do token refresh.
   """
-  @spec with_locked_session(integer(), (User.t(), AtprotoSession.t() ->
-                                          {:ok, term()} | {:error, term()})) :: term()
-  def with_locked_session(user_id, fun) do
+  @spec with_locked_session(String.t(), (AtprotoSession.t() ->
+                                           {:ok, term()} | {:error, term()})) :: term()
+  def with_locked_session(did, fun) do
     Repo.transact(fn ->
       query =
-        from(s in AtprotoSession, where: s.user_id == ^user_id, lock: "FOR UPDATE")
+        from(s in AtprotoSession, where: s.did == ^did, lock: "FOR UPDATE")
 
       case Repo.one(query) do
         nil -> {:error, :no_session}
-        atproto_session -> fun.(get_user!(user_id), atproto_session)
+        atproto_session -> fun.(atproto_session)
       end
     end)
   end

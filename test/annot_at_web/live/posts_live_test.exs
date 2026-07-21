@@ -215,17 +215,10 @@ defmodule AnnotAtWeb.PostsLiveTest do
 
   defp create_user do
     {:ok, user} =
-      Accounts.upsert_login(
-        %{did: "did:plc:abc", handle: "alice.test", pds_host: "https://pds.example.com"},
-        %{
-          auth_server_issuer: "https://bsky.social",
-          granted_scopes: "atproto",
-          access_token: "a",
-          refresh_token: "r",
-          dpop_private_jwk: "{}",
-          expires_at: ~U[2026-01-01 01:00:00Z]
-        }
-      )
+      Accounts.upsert_user(%{
+        did: "did:plc:abc",
+        handle: "jola.dev"
+      })
 
     user
   end

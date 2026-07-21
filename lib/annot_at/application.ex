@@ -13,9 +13,7 @@ defmodule AnnotAt.Application do
       AnnotAt.Repo,
       {DNSCluster, query: Application.get_env(:annot_at, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: AnnotAt.PubSub},
-      # Start a worker by calling: AnnotAt.Worker.start_link(arg)
-      # {AnnotAt.Worker, arg},
-      # Start to serve requests, typically the last entry
+      {Latch, Application.fetch_env!(:annot_at, AnnotAt.Latch)},
       AnnotAtWeb.Endpoint
     ]
 

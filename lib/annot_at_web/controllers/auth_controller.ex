@@ -3,9 +3,7 @@ defmodule AnnotAtWeb.AuthController do
 
   import AnnotAtWeb.UserAuth, only: [log_in_user: 2, log_out_user: 1]
 
-  alias AnnotAt.Atproto.OAuth.ClientMetadata
-  alias AnnotAt.Atproto.OAuth.Config
-  alias AnnotAt.Atproto.OAuth.Login
+  alias AnnotAt.Login
 
   def callback(conn, params) do
     case Login.complete_login(params) do
@@ -28,14 +26,7 @@ defmodule AnnotAtWeb.AuthController do
   end
 
   def client_metadata(conn, _params) do
-    metadata =
-      ClientMetadata.build(
-        client_id: Config.client_id(),
-        redirect_uris: [Config.redirect_uri()],
-        scope: Config.scope(),
-        jwk: Config.signing_key(),
-        client_name: "annot.at"
-      )
+    metadata = Latch.client_metadata(AnnotAt.Latch)
 
     json(conn, metadata)
   end

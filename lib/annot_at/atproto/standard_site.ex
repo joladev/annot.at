@@ -1,13 +1,12 @@
 defmodule AnnotAt.Atproto.StandardSite do
   @moduledoc """
   Writes standard.site records (publication, documents) to a user's repo
-  via the authenticated `Client`, uploading any images as blobs first.
+  via Latch, uploading any images as blobs first.
   """
 
   alias AnnotAt.Accounts
   alias AnnotAt.Atproto.HTTP
   alias AnnotAt.Atproto.Identity
-  alias AnnotAt.Atproto.OAuth.Client
   alias AnnotAt.Atproto.StandardSite.Document
   alias AnnotAt.Atproto.StandardSite.Publication
 
@@ -23,7 +22,7 @@ defmodule AnnotAt.Atproto.StandardSite do
   @spec put_publication(integer(), String.t(), Publication.t()) :: {:ok, map()} | {:error, term()}
   def put_publication(user_id, rkey, %Publication{} = publication) do
     with {:ok, user} <- fetch_user(user_id),
-         {:ok, icon} <- upload_image(user_id, publication.icon) do
+         {:ok, icon} <- upload_image(user, publication.icon) do
       put_record(user, @publication, rkey, publication_record(publication, icon))
     end
   end
@@ -31,7 +30,7 @@ defmodule AnnotAt.Atproto.StandardSite do
   def get_document(user_id, rkey) do
     with {:ok, user} <- fetch_user(user_id),
          {:ok, %{"value" => value}} <-
-           Client.query(user.id, "com.atproto.repo.getRecord",
+           Latch.query(AnnotAt.Latch, user.did, "com.atproto.repo.getRecord",
              repo: user.did,
              collection: @document,
              rkey: rkey
@@ -46,14 +45,14 @@ defmodule AnnotAt.Atproto.StandardSite do
   @spec put_document(integer(), Document.t()) :: {:ok, map()} | {:error, term()}
   def put_document(user_id, %Document{} = document) do
     with {:ok, user} <- fetch_user(user_id),
-         {:ok, cover} <- upload_image(user_id, document.cover_image) do
+         {:ok, cover} <- upload_image(user, document.cover_image) do
       put_record(user, @document, document.rkey, document_record(document, cover))
     end
   end
 
   def delete_document(user_id, rkey) do
     with {:ok, user} <- fetch_user(user_id) do
-      Client.procedure(user.id, "com.atproto.repo.deleteRecord", %{
+      Latch.procedure(AnnotAt.Latch, user.did, "com.atproto.repo.deleteRecord", %{
         repo: user.did,
         collection: @document,
         rkey: rkey
@@ -100,7 +99,7 @@ defmodule AnnotAt.Atproto.StandardSite do
   def list_publications(user_id) do
     with {:ok, user} <- fetch_user(user_id),
          {:ok, %{"records" => records}} <-
-           Client.query(user.id, "com.atproto.repo.listRecords",
+           Latch.query(AnnotAt.Latch, user.did, "com.atproto.repo.listRecords",
              repo: user.did,
              collection: @publication
            ) do
@@ -115,7 +114,7 @@ defmodule AnnotAt.Atproto.StandardSite do
   def get_publication(user_id, rkey) do
     with {:ok, user} <- fetch_user(user_id),
          {:ok, %{"value" => value}} <-
-           Client.query(user.id, "com.atproto.repo.getRecord",
+           Latch.query(AnnotAt.Latch, user.did, "com.atproto.repo.getRecord",
              repo: user.did,
              collection: @publication,
              rkey: rkey
@@ -171,17 +170,18 @@ defmodule AnnotAt.Atproto.StandardSite do
     end
   end
 
-  defp upload_image(_user_id, nil), do: {:ok, nil}
+  defp upload_image(_user, nil), do: {:ok, nil}
 
-  defp upload_image(user_id, {bytes, content_type}) do
-    with {:ok, %{"blob" => blob}} <- Client.upload_blob(user_id, bytes, content_type) do
+  defp upload_image(user, {bytes, content_type}) do
+    with {:ok, %{"blob" => blob}} <-
+           Latch.upload_blob(AnnotAt.Latch, user.did, bytes, content_type) do
       {:ok, blob}
     end
   end
 
   defp put_record(user, collection, rkey, record) do
     body = %{repo: user.did, collection: collection, rkey: rkey, record: record}
-    Client.procedure(user.id, "com.atproto.repo.putRecord", body)
+    Latch.procedure(AnnotAt.Latch, user.did, "com.atproto.repo.putRecord", body)
   end
 
   defp publication_record(p, icon) do

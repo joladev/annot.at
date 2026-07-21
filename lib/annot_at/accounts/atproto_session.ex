@@ -3,7 +3,13 @@ defmodule AnnotAt.Accounts.AtprotoSession do
 
   import Ecto.Changeset
 
+  @type t :: map()
+
   schema "atproto_sessions" do
+    # The decentralized ID of the user
+    field :did, :string
+    # PDS host, where user's data lives
+    field :pds_host, :string
     # e.g. https://bsky.social
     field :auth_server_issuer, :string
     # Space-separated scopes from token response
@@ -15,15 +21,14 @@ defmodule AnnotAt.Accounts.AtprotoSession do
     # Access token expiry
     field :expires_at, :utc_datetime
 
-    belongs_to :user, AnnotAt.Accounts.User
-
     timestamps(type: :utc_datetime)
   end
 
   def changeset(session, attrs) do
     session
     |> cast(attrs, [
-      :user_id,
+      :did,
+      :pds_host,
       :auth_server_issuer,
       :granted_scopes,
       :access_token,
@@ -32,7 +37,8 @@ defmodule AnnotAt.Accounts.AtprotoSession do
       :expires_at
     ])
     |> validate_required([
-      :user_id,
+      :did,
+      :pds_host,
       :auth_server_issuer,
       :granted_scopes,
       :access_token,
@@ -40,7 +46,6 @@ defmodule AnnotAt.Accounts.AtprotoSession do
       :dpop_private_jwk,
       :expires_at
     ])
-    |> foreign_key_constraint(:user_id)
-    |> unique_constraint(:user_id)
+    |> unique_constraint(:did)
   end
 end

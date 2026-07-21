@@ -3,7 +3,7 @@ defmodule AnnotAtWeb.AuthControllerTest do
   use Mimic
 
   alias AnnotAt.Accounts
-  alias AnnotAt.Atproto.OAuth.Login
+  alias AnnotAt.Login
 
   @did "did:plc:ewvi7nxzyoun6zhxrhs64oiz"
 
@@ -52,17 +52,10 @@ defmodule AnnotAtWeb.AuthControllerTest do
 
   defp create_user do
     {:ok, user} =
-      Accounts.upsert_login(
-        %{did: @did, handle: "alice.test", pds_host: "https://pds.example.com"},
-        %{
-          auth_server_issuer: "https://bsky.social",
-          granted_scopes: "atproto",
-          access_token: "a",
-          refresh_token: "r",
-          dpop_private_jwk: "{}",
-          expires_at: ~U[2026-01-01 01:00:00Z]
-        }
-      )
+      Accounts.upsert_user(%{
+        did: @did,
+        handle: "johanna.cove.town"
+      })
 
     user
   end

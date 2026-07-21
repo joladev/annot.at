@@ -2,7 +2,7 @@ defmodule AnnotAtWeb.LoginLive do
   use AnnotAtWeb, :live_view
 
   alias AnnotAt.Atproto.Directory
-  alias AnnotAt.Atproto.OAuth.Login
+  alias AnnotAt.Login
 
   @min_query_length 2
 

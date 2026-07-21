@@ -15,7 +15,7 @@ defmodule AnnotAtWeb.DashboardLiveTest do
       |> init_test_session(%{user_id: user.id})
       |> live(~p"/dashboard")
 
-    assert html =~ "Hi Alice"
+    assert html =~ "Hi Johanna"
     assert html =~ "Your sites"
   end
 
@@ -26,22 +26,11 @@ defmodule AnnotAtWeb.DashboardLiveTest do
 
   defp create_user do
     {:ok, user} =
-      Accounts.upsert_login(
-        %{
-          did: @did,
-          handle: "alice.test",
-          pds_host: "https://pds.example.com",
-          display_name: "Alice"
-        },
-        %{
-          auth_server_issuer: "https://bsky.social",
-          granted_scopes: "atproto",
-          access_token: "a",
-          refresh_token: "r",
-          dpop_private_jwk: "{}",
-          expires_at: ~U[2026-01-01 01:00:00Z]
-        }
-      )
+      Accounts.upsert_user(%{
+        did: @did,
+        handle: "jola.dev",
+        display_name: "Johanna"
+      })
 
     user
   end

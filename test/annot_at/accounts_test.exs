@@ -8,91 +8,62 @@ defmodule AnnotAt.AccountsTest do
 
   @did "did:plc:ewvi7nxzyoun6zhxrhs64oiz"
 
-  defp user_attrs(overrides \\ %{}) do
-    Map.merge(
-      %{
-        did: @did,
-        handle: "alice.test",
-        pds_host: "https://pds.example.com",
-        handle_verified_at: ~U[2026-01-01 00:00:00Z]
-      },
-      overrides
-    )
+  describe "upsert_user/1" do
+    test "creates a user" do
+      assert {:ok, user} = Accounts.upsert_user(user_attrs())
+
+      assert @did == user.did
+      assert "jola.dev" == user.handle
+    end
+
+    test "upsert_user/1 updates the user on conflict" do
+      {:ok, first} = Accounts.upsert_user(user_attrs())
+      {:ok, second} = Accounts.upsert_user(user_attrs(%{handle: "johanna.cove.town"}))
+
+      assert first.id == second.id
+      assert "johanna.cove.town" == second.handle
+      assert 1 == Repo.aggregate(User, :count)
+    end
   end
 
-  defp session_attrs(overrides \\ %{}) do
-    Map.merge(
-      %{
-        auth_server_issuer: "https://bsky.social",
-        granted_scopes: "atproto",
-        access_token: "access-1",
-        refresh_token: "refresh-1",
-        dpop_private_jwk: "{}",
-        expires_at: ~U[2026-01-01 01:00:00Z]
-      },
-      overrides
-    )
-  end
+  describe "upsert_session/2" do
+    test "creates a session for a did" do
+      {:ok, session} = Accounts.upsert_session(@did, session_attrs())
 
-  test "upsert_login/2 creates a user and session" do
-    assert {:ok, user} = Accounts.upsert_login(user_attrs(), session_attrs())
+      assert @did == session.did
+      assert "access-1" == session.access_token
+    end
 
-    assert @did == user.did
-    assert "alice.test" == user.handle
-    assert %AtprotoSession{} = user.atproto_session
-    assert "access-1" == user.atproto_session.access_token
-  end
+    test "replaces the existing session for a did" do
+      {:ok, _} = Accounts.upsert_session(@did, session_attrs())
 
-  test "upsert_login/2 updates the user and replaces the session on re-login" do
-    {:ok, first} = Accounts.upsert_login(user_attrs(), session_attrs())
+      {:ok, replaced} =
+        Accounts.upsert_session(@did, session_attrs(%{access_token: "access-2"}))
 
-    {:ok, second} =
-      Accounts.upsert_login(
-        user_attrs(%{handle: "alice.new"}),
-        session_attrs(%{access_token: "access-2", refresh_token: "refresh-2"})
-      )
-
-    assert first.id == second.id
-    assert "alice.new" == second.handle
-    assert "access-2" == second.atproto_session.access_token
-    assert 1 == Repo.aggregate(User, :count)
-    assert 1 == Repo.aggregate(AtprotoSession, :count)
-  end
-
-  test "upsert_login/2 rolls back and returns an error for invalid attrs" do
-    assert {:error, changeset} = Accounts.upsert_login(%{handle: "x"}, session_attrs())
-    assert %{did: ["can't be blank"]} = errors_on(changeset)
-    assert 0 == Repo.aggregate(User, :count)
-  end
-
-  test "upsert_session/2 replaces the existing session for a user" do
-    {:ok, user} = Accounts.upsert_user(user_attrs())
-    {:ok, _} = Accounts.upsert_session(user.id, session_attrs())
-    {:ok, replaced} = Accounts.upsert_session(user.id, session_attrs(%{access_token: "access-2"}))
-
-    assert "access-2" == replaced.access_token
-    assert 1 == Repo.aggregate(AtprotoSession, :count)
+      assert "access-2" == replaced.access_token
+      assert 1 == Repo.aggregate(AtprotoSession, :count)
+    end
   end
 
   test "get_user_by_did/1 and get_atproto_session/1 fetch persisted records" do
-    {:ok, user} = Accounts.upsert_login(user_attrs(), session_attrs())
+    {:ok, user} = Accounts.upsert_user(user_attrs())
+    {:ok, _} = Accounts.upsert_session(@did, session_attrs())
 
     assert user.id == Accounts.get_user_by_did(@did).id
-    assert "access-1" == Accounts.get_atproto_session(user.id).access_token
+    assert "access-1" == Accounts.get_atproto_session(@did).access_token
   end
 
   test "get_user_by_did/1 returns nil for an unknown DID" do
     refute Accounts.get_user_by_did("did:plc:nope")
   end
 
-  test "delete_atproto_session/1 removes the session, keeping the user" do
-    {:ok, user} = Accounts.upsert_login(user_attrs(), session_attrs())
-    assert Accounts.get_atproto_session(user.id)
+  test "delete_atproto_session/1 removes the session" do
+    {:ok, _} = Accounts.upsert_session(@did, session_attrs())
+    assert Accounts.get_atproto_session(@did)
 
-    assert :ok == Accounts.delete_atproto_session(user)
+    assert :ok == Accounts.delete_atproto_session(@did)
 
-    refute Accounts.get_atproto_session(user.id)
-    assert Accounts.get_user!(user.id)
+    refute Accounts.get_atproto_session(@did)
   end
 
   test "create_login_request/1 then take_login_request/1 round-trips a login" do
@@ -133,12 +104,38 @@ defmodule AnnotAt.AccountsTest do
       %{
         state: "state-123",
         did: @did,
-        handle: "alice.test",
+        handle: "jola.dev",
         pds_host: "https://pds.example.com",
         auth_server_issuer: "https://bsky.social",
         pkce_verifier: "verifier-123",
         dpop_private_jwk: "{}",
         token_endpoint: "somethnig"
+      },
+      overrides
+    )
+  end
+
+  defp user_attrs(overrides \\ %{}) do
+    Map.merge(
+      %{
+        did: @did,
+        handle: "jola.dev",
+        handle_verified_at: ~U[2026-01-01 00:00:00Z]
+      },
+      overrides
+    )
+  end
+
+  defp session_attrs(overrides \\ %{}) do
+    Map.merge(
+      %{
+        auth_server_issuer: "https://bsky.social",
+        granted_scopes: "atproto",
+        access_token: "access-1",
+        refresh_token: "refresh-1",
+        dpop_private_jwk: "{}",
+        expires_at: ~U[2026-01-01 01:00:00Z],
+        pds_host: "https://pds.example.com"
       },
       overrides
     )

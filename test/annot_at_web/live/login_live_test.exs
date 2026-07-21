@@ -5,7 +5,7 @@ defmodule AnnotAtWeb.LoginLiveTest do
   import Phoenix.LiveViewTest
 
   alias AnnotAt.Atproto.Directory
-  alias AnnotAt.Atproto.OAuth.Login
+  alias AnnotAt.Login
 
   test "renders the sign-in form", %{conn: conn} do
     {:ok, lv, _html} = live(conn, ~p"/login")

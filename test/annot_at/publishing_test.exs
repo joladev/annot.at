@@ -11,8 +11,7 @@ defmodule AnnotAt.PublishingTest do
     {:ok, user} =
       Accounts.upsert_user(%{
         did: "did:plc:ewvi7nxzyoun6zhxrhs64oiz",
-        handle: "jola.dev",
-        pds_host: "https://pds.example.com"
+        handle: "jola.dev"
       })
 
     %{scope: Scope.for_user(user)}

@@ -4,7 +4,6 @@ defmodule AnnotAt.Atproto.StandardSiteTest do
 
   alias AnnotAt.Accounts
   alias AnnotAt.Atproto.HTTP
-  alias AnnotAt.Atproto.OAuth.Client
   alias AnnotAt.Atproto.StandardSite
   alias AnnotAt.Atproto.StandardSite.Document
   alias AnnotAt.Atproto.StandardSite.Publication
@@ -16,8 +15,7 @@ defmodule AnnotAt.Atproto.StandardSiteTest do
     test "writes a publication record at rkey self" do
       user = create_user()
 
-      expect(Client, :procedure, fn user_id, "com.atproto.repo.putRecord", body ->
-        assert user.id == user_id
+      expect(Latch, :procedure, fn AnnotAt.Latch, @did, "com.atproto.repo.putRecord", body ->
         assert @did == body.repo
         assert "site.standard.publication" == body.collection
         assert "abc123" == body.rkey
@@ -31,7 +29,7 @@ defmodule AnnotAt.Atproto.StandardSiteTest do
     end
 
     test "returns :no_session when the user does not exist" do
-      reject(&Client.procedure/3)
+      reject(&Latch.procedure/4)
 
       assert {:error, :no_session} =
                StandardSite.put_publication(-1, "abc123", %Publication{name: "x", url: "y"})
@@ -47,12 +45,11 @@ defmodule AnnotAt.Atproto.StandardSiteTest do
         "size" => 3
       }
 
-      expect(Client, :upload_blob, fn user_id, <<1, 2, 3>>, "image/png" ->
-        assert user.id == user_id
+      expect(Latch, :upload_blob, fn AnnotAt.Latch, @did, <<1, 2, 3>>, "image/png" ->
         {:ok, %{"blob" => blob}}
       end)
 
-      expect(Client, :procedure, fn _user_id, "com.atproto.repo.putRecord", body ->
+      expect(Latch, :procedure, fn AnnotAt.Latch, @did, "com.atproto.repo.putRecord", body ->
         assert blob == body.record["icon"]
         {:ok, %{"uri" => "at://x"}}
       end)
@@ -69,7 +66,7 @@ defmodule AnnotAt.Atproto.StandardSiteTest do
     test "omits optional fields that are nil" do
       user = create_user()
 
-      expect(Client, :procedure, fn _user_id, "com.atproto.repo.putRecord", body ->
+      expect(Latch, :procedure, fn AnnotAt.Latch, @did, "com.atproto.repo.putRecord", body ->
         refute Map.has_key?(body.record, "description")
         refute Map.has_key?(body.record, "icon")
         {:ok, %{}}
@@ -87,7 +84,7 @@ defmodule AnnotAt.Atproto.StandardSiteTest do
     test "writes a document record with an rkey and rfc3339 timestamps" do
       user = create_user()
 
-      expect(Client, :procedure, fn _user_id, "com.atproto.repo.putRecord", body ->
+      expect(Latch, :procedure, fn AnnotAt.Latch, @did, "com.atproto.repo.putRecord", body ->
         assert "site.standard.document" == body.collection
         assert "post-1" == body.rkey
         assert "Hello" == body.record["title"]
@@ -114,7 +111,7 @@ defmodule AnnotAt.Atproto.StandardSiteTest do
     test "omits updatedAt and path when not set" do
       user = create_user()
 
-      expect(Client, :procedure, fn _user_id, "com.atproto.repo.putRecord", body ->
+      expect(Latch, :procedure, fn AnnotAt.Latch, @did, "com.atproto.repo.putRecord", body ->
         refute Map.has_key?(body.record, "updatedAt")
         refute Map.has_key?(body.record, "path")
         assert "2026-01-01T00:00:00Z" == body.record["publishedAt"]
@@ -178,7 +175,7 @@ path" do
     test "returns existing publications with their rkeys" do
       user = create_user()
 
-      expect(Client, :query, fn _id, "com.atproto.repo.listRecords", params ->
+      expect(Latch, :query, fn AnnotAt.Latch, @did, "com.atproto.repo.listRecords", params ->
         assert "site.standard.publication" == params[:collection]
 
         {:ok,
@@ -203,7 +200,7 @@ path" do
     test "reads the record value" do
       user = create_user()
 
-      expect(Client, :query, fn _id, "com.atproto.repo.getRecord", params ->
+      expect(Latch, :query, fn AnnotAt.Latch, @did, "com.atproto.repo.getRecord", params ->
         assert "abc123" == params[:rkey]
         {:ok, %{"value" => %{"name" => "jola.dev", "url" => "https://jola.dev"}}}
       end)
@@ -232,8 +229,7 @@ path" do
     {:ok, user} =
       Accounts.upsert_user(%{
         did: @did,
-        handle: "jola.dev",
-        pds_host: "https://pds.example.com"
+        handle: "jola.dev"
       })
 
     user
