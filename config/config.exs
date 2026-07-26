@@ -63,6 +63,7 @@ config :phoenix, :json_library, Jason
 config :annot_at, AnnotAt.Latch,
   name: AnnotAt.Latch,
   store: AnnotAt.LatchStore,
+  mode: :confidential,
   client_name: "annot.at",
   scope:
     Enum.join(
