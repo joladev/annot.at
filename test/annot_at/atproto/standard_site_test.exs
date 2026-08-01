@@ -175,7 +175,8 @@ path" do
     test "returns existing publications with their rkeys" do
       user = create_user()
 
-      expect(Latch, :query, fn AnnotAt.Latch, @did, "com.atproto.repo.listRecords", params ->
+      expect(Latch, :query, fn AnnotAt.Latch, @did, "com.atproto.repo.listRecords", opts ->
+        params = opts[:params]
         assert "site.standard.publication" == params[:collection]
 
         {:ok,
@@ -200,7 +201,8 @@ path" do
     test "reads the record value" do
       user = create_user()
 
-      expect(Latch, :query, fn AnnotAt.Latch, @did, "com.atproto.repo.getRecord", params ->
+      expect(Latch, :query, fn AnnotAt.Latch, @did, "com.atproto.repo.getRecord", opts ->
+        params = opts[:params]
         assert "abc123" == params[:rkey]
         {:ok, %{"value" => %{"name" => "jola.dev", "url" => "https://jola.dev"}}}
       end)

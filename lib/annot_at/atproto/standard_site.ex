@@ -31,9 +31,7 @@ defmodule AnnotAt.Atproto.StandardSite do
     with {:ok, user} <- fetch_user(user_id),
          {:ok, %{"value" => value}} <-
            Latch.query(AnnotAt.Latch, user.did, "com.atproto.repo.getRecord",
-             repo: user.did,
-             collection: @document,
-             rkey: rkey
+             params: [repo: user.did, collection: @document, rkey: rkey]
            ) do
       {:ok, value}
     end
@@ -100,8 +98,7 @@ defmodule AnnotAt.Atproto.StandardSite do
     with {:ok, user} <- fetch_user(user_id),
          {:ok, %{"records" => records}} <-
            Latch.query(AnnotAt.Latch, user.did, "com.atproto.repo.listRecords",
-             repo: user.did,
-             collection: @publication
+             params: [repo: user.did, collection: @publication]
            ) do
       {:ok, Enum.map(records, &to_existing/1)}
     end
@@ -115,9 +112,7 @@ defmodule AnnotAt.Atproto.StandardSite do
     with {:ok, user} <- fetch_user(user_id),
          {:ok, %{"value" => value}} <-
            Latch.query(AnnotAt.Latch, user.did, "com.atproto.repo.getRecord",
-             repo: user.did,
-             collection: @publication,
-             rkey: rkey
+             params: [repo: user.did, collection: @publication, rkey: rkey]
            ) do
       {:ok, value}
     end
