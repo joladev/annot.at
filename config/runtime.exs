@@ -78,29 +78,7 @@ if config_env() == :prod do
     ]
 end
 
-# Help I can't find a better way of doing this. I want the full app URL from
-# AnnotAtWeb.Endpoint.url() but at config time, without having to duplicate it.
-# I can't call that function because it uses persistent_term and it's not
-# populated until after the Endpoint is started. Awkward.
-url_config = Application.get_env(:annot_at, AnnotAtWeb.Endpoint)[:url] || []
-http_config = Application.get_env(:annot_at, AnnotAtWeb.Endpoint)[:http] || []
-
-host = Keyword.get(url_config, :host, "localhost")
-scheme = Keyword.get(url_config, :scheme, "http")
-
-port =
-  Keyword.get(
-    url_config,
-    :port,
-    Keyword.get(http_config, :port, if(scheme == "https", do: 443, else: 80))
-  )
-
-base_url =
-  if (scheme == "https" and port == 443) or (scheme == "http" and port == 80) do
-    "#{scheme}://#{host}"
-  else
-    "#{scheme}://#{host}:#{port}"
-  end
+base_url = System.get_env("APP_URL", "http://localhost:4002")
 
 config :annot_at, AnnotAt.Latch,
   client_id: base_url <> "/oauth-client-metadata.json",
