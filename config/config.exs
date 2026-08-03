@@ -67,7 +67,7 @@ config :annot_at, AnnotAt.Latch,
   client_name: "annot.at",
   client_id_path: "/oauth-client-metadata.json",
   redirect_uri_path: "/auth/callback",
-  base_url_fun: fn -> AnnotAtWeb.Endpoint.url() end,
+  base_url_fun: &AnnotAtWeb.Endpoint.url/0,
   scope:
     Enum.join(
       [
