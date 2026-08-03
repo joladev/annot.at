@@ -74,7 +74,7 @@ defmodule AnnotAt.MixProject do
       {:saxy, "~> 1.6"},
       {:date_time_parser, "~> 1.3"},
       {:html_sanitize_ex, "~> 1.4"},
-      {:latch, "~> 0.1"}
+      {:latch, "~> 0.5"}
     ]
   end
 

@@ -77,9 +77,3 @@ if config_env() == :prod do
          tag: "AES.GCM.V1", key: Base.decode64!(System.fetch_env!("CLOAK_KEY"))}
     ]
 end
-
-base_url = System.get_env("APP_URL", "http://localhost:4002")
-
-config :annot_at, AnnotAt.Latch,
-  client_id: base_url <> "/oauth-client-metadata.json",
-  redirect_uri: base_url <> "/auth/callback"

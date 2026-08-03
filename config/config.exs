@@ -65,6 +65,9 @@ config :annot_at, AnnotAt.Latch,
   store: AnnotAt.LatchStore,
   mode: :confidential,
   client_name: "annot.at",
+  client_id_path: "/oauth-client-metadata.json",
+  redirect_uri_path: "/auth/callback",
+  base_url_fun: fn -> AnnotAtWeb.Endpoint.url() end,
   scope:
     Enum.join(
       [
