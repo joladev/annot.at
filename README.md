@@ -27,12 +27,13 @@ annot.at will use information from your blog to publish your documents. From the
 - [x] Add site including verification
 - [x] Document cover images
 - [x] Document content with html content type
+- [ ] Support multiple publications on the same site
 - [ ] RSS poller
 - [ ] standard.site document reader
 - [ ] Post to Bluesky
 - [ ] Let atproto drive things more
-  - [ ] List publications, including not explicitly added ones
-  - [ ] List documents, including not explicitly added ones
+  - [x] List publications, including not explicitly added ones
+  - [x] List documents, including not explicitly added ones
   - [ ] List dangling documents/documents that no longer validate against post etc
 
 ## Authenticating
