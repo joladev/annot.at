@@ -14,7 +14,7 @@ defmodule AnnotAtWeb.ImportLive do
     ~H"""
     <Layouts.dashboard flash={@flash} current_scope={@current_scope} active={:sites}>
       <.link
-        navigate={~p"/sites?tab=discovered"}
+        navigate={~p"/?tab=discovered"}
         class="text-sm font-bold text-ink/50 hover:text-ink"
       >
         ← Discovered

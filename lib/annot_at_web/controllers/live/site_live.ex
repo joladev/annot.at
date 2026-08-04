@@ -237,7 +237,7 @@ defmodule AnnotAtWeb.SiteLive do
     socket =
       socket
       |> put_flash(:info, "Site disconnected.")
-      |> push_navigate(to: ~p"/sites")
+      |> push_navigate(to: ~p"/")
 
     {:noreply, socket}
   end

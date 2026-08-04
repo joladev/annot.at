@@ -107,20 +107,6 @@ defmodule AnnotAtWeb.Layouts do
           >
             Overview
           </.dash_nav_item>
-
-          <div class="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase
-    tracking-widest text-ink/40">
-            Publish
-          </div>
-          <.dash_nav_item icon="hero-globe-alt" navigate={~p"/sites"} active={@active == :sites}>
-            Sites
-          </.dash_nav_item>
-
-          <div class="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase
-    tracking-widest text-ink/40">
-            Account
-          </div>
-          <.dash_nav_item icon="hero-cog-6-tooth">Settings</.dash_nav_item>
         </nav>
 
         <div class="mt-auto border-t-2 border-ink/10 pt-3">

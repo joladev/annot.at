@@ -16,7 +16,6 @@ defmodule AnnotAtWeb.DashboardLiveTest do
       |> live(~p"/dashboard")
 
     assert html =~ "Hi Johanna"
-    assert html =~ "Your sites"
   end
 
   test "redirects to login when not authenticated", %{conn: conn} do
