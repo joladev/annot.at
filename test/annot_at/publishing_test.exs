@@ -121,20 +121,17 @@ defmodule AnnotAt.PublishingTest do
     assert %DateTime{} = updated.published_at
   end
 
-  describe "create_post/2" do
-    test "then list_posts/1 round trips, scoped to the site", %{scope: scope} do
+  describe "track_post/2" do
+    test "inserts then updates the content hash for the same rkey", %{scope: scope} do
       {:ok, site} = Publishing.create_site(scope, "https://example.com")
 
-      assert {:ok, %Post{} = post} =
-               Publishing.create_post(site, %{
-                 guid: "abc",
-                 rkey: "3mope",
-                 content_hash: "deadbeef"
-               })
+      assert {:ok, _} =
+               Publishing.track_post(site, %{guid: "g1", rkey: "3mope", content_hash: "aaa"})
 
-      assert post.site_id == site.id
-      assert [listed] = Publishing.list_posts(site)
-      assert listed.id == post.id
+      assert {:ok, _} =
+               Publishing.track_post(site, %{guid: "g1", rkey: "3mope", content_hash: "bbb"})
+
+      assert [%Post{content_hash: "bbb"}] = Publishing.list_posts(site)
     end
   end
 end

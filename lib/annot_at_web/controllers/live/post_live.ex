@@ -5,6 +5,7 @@ defmodule AnnotAtWeb.PostLive do
 
   alias AnnotAt.Atproto
   alias AnnotAt.Atproto.StandardSite
+  alias AnnotAt.Atproto.StandardSite.Document
   alias AnnotAt.Publishing
 
   require Logger
@@ -27,14 +28,13 @@ defmodule AnnotAtWeb.PostLive do
     """
   end
 
-  def mount(%{"id" => site_id, "post_id" => post_id}, _session, socket) do
+  def mount(%{"id" => site_id, "rkey" => rkey}, _session, socket) do
     scope = socket.assigns.current_scope
     site = Publishing.get_site!(scope, site_id)
-    post = Publishing.get_post!(site, post_id)
 
-    case StandardSite.get_document(scope.user.id, post.rkey) do
+    case StandardSite.get_document(scope.user.id, rkey) do
       {:ok, doc} ->
-        {:ok, assign(socket, site: site, doc: doc, page_title: doc["title"])}
+        {:ok, assign(socket, site: site, doc: doc, page_title: doc.title)}
 
       {:error, error} ->
         Logger.warning("PostLive: unable to load post", reason: inspect(error))
@@ -52,7 +52,7 @@ defmodule AnnotAtWeb.PostLive do
     %{display_name: user.display_name, handle: user.handle, avatar_url: user.avatar_url}
   end
 
-  defp cover_url(user, %{"coverImage" => blob}) do
+  defp cover_url(user, %Document{cover_image: %{} = blob}) do
     Atproto.blob_url(user.pds_host, user.did, blob)
   end
 

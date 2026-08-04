@@ -36,166 +36,289 @@ defmodule AnnotAtWeb.PostsLive do
             feed.</p>
         </:failed>
 
-        <div
-          :if={feed.entries != []}
-          class="mt-6 flex flex-col gap-3
-         sm:flex-row sm:items-center sm:justify-between"
-        >
-          <p class="text-sm font-medium text-ink/55">
-            {Enum.count(done(feed.entries, @posts))} of {length(feed.entries)} published
-          </p>
-
-          <.button
-            variant="primary"
-            shadow="secondary"
-            disabled={
-              @publishing_all? or
-                not any_pending?(
-                  feed.entries,
-                  @posts
-                )
-            }
-            phx-click={show_modal("publish-all-modal")}
-          >
-            <.icon :if={@publishing_all?} name="hero-arrow-path" class="size-5
-     animate-spin" />
-            {if @publishing_all?, do: "Publishing…", else: "Publish all"}
-          </.button>
-        </div>
-
-        <p :if={feed.entries == []} class="mt-6 text-ink/55">No posts in this
-          feed.</p>
-
-        <div :if={pending(feed.entries, @posts) != []} class="mt-6 space-y-3">
-          <div
-            :for={entry <- pending(feed.entries, @posts)}
-            class="flex items-center gap-4 rounded-2xl border-2 border-ink bg-paper p-4"
-          >
-            <.cover_thumb entry={entry} />
-
-            <div class="min-w-0 flex-1">
-              <div class="truncate font-bold">{entry.title}</div>
-              <div :if={entry.summary} class="mt-0.5 truncate text-sm text-ink/55">
-                {entry.summary}
-              </div>
-              <div class="mt-1 flex items-center gap-2 text-xs text-ink/45">
-                <span :if={entry.published_at}>{Calendar.strftime(entry.published_at, "%b
-          %d, %Y")}</span>
-                <span
-                  :if={entry.cover_status in [:too_large, :not_image]}
-                  class="text-ink/45"
-                >
-                  {cover_note(entry.cover_status)}
-                </span>
-              </div>
+        <.async_result :let={documents} assign={@documents}>
+          <:loading>
+            <div class="mt-6 flex items-center gap-2 text-ink/60">
+              <.icon name="hero-arrow-path" class="size-5 animate-spin" /> Reading your repo…
             </div>
+          </:loading>
+          <:failed :let={_}>
+            <p class="mt-6 text-sm font-bold text-red-600">Couldn't read your repo.</p>
+          </:failed>
 
-            <.button
-              :if={has_date?(entry)}
-              variant="primary"
-              size="sm"
-              disabled={is_nil(entry.rkey) or publishing?(@publishing, entry)}
-              phx-value-guid={entry.id}
-              phx-click={"select_post" |> JS.push() |> show_modal("publish-modal")}
+          <% tabs = partition(feed.entries, documents) %>
+          <% outside = outside_feed(feed.entries, documents) %>
+
+          <nav class="mt-6 flex flex-wrap items-center gap-2">
+            <.tab_link patch={~p"/sites/#{@site.id}/posts?tab=published"} active={@tab == :published}>
+              Published ({length(tabs.published)})
+            </.tab_link>
+            <.tab_link
+              patch={~p"/sites/#{@site.id}/posts?tab=unpublished"}
+              active={@tab == :unpublished}
             >
-              <.icon
-                :if={publishing?(@publishing, entry)}
-                name="hero-arrow-path"
-                class="size-4 animate-spin"
-              />
-              {if publishing?(@publishing, entry), do: "Publishing…", else: "Publish"}
-            </.button>
-            <span :if={not has_date?(entry)} class="flex-none text-xs text-ink/40">No
-            date</span>
-          </div>
-        </div>
-
-        <div :if={done(feed.entries, @posts) != []} class="mt-8">
-          <div class="text-[11px] font-bold uppercase tracking-widest
-        text-ink/40">Published</div>
-          <div class="mt-3 space-y-2">
-            <div
-              :for={entry <- done(feed.entries, @posts)}
-              class="flex items-center justify-between gap-3 rounded-2xl
-        border-2 border-ink/15 px-4 py-3"
+              Unpublished ({length(tabs.unpublished)})
+            </.tab_link>
+            <.tab_link
+              patch={~p"/sites/#{@site.id}/posts?tab=outside_feed"}
+              active={@tab == :outside_feed}
             >
-              <.cover_thumb entry={entry} />
-
-              <div class="min-w-0 flex-1">
-                <.link
-                  navigate={~p"/sites/#{@site.id}/posts/#{entry_to_post(@posts, entry).id}"}
-                  class="block truncate font-bold text-ink/70 hover:text-ink"
-                >
-                  {entry.title}
-                </.link>
-                <div :if={entry.summary} class="mt-0.5 truncate text-sm text-ink/50">
-                  {entry.summary}
-                </div>
-                <div class="mt-1 flex items-center gap-2 text-xs text-ink/45">
-                  <span class="flex items-center gap-1">
-                    <.icon name="hero-check" class="size-3.5" /> Published
-                  </span>
-                  <span class="truncate text-ink/40">
-                    {entry_to_post(
-                      @posts,
-                      entry
-                    ).rkey}
-                  </span>
-                  <span :if={entry.cover_status in [:too_large, :not_image]}>
-                    {cover_note(entry.cover_status)}
-                  </span>
-                </div>
-              </div>
-
+              Outside feed ({length(outside)})
+            </.tab_link>
+            <.tab_link patch={~p"/sites/#{@site.id}/posts?tab=setup"} active={@tab == :setup}>
+              Setup needed ({length(tabs.setup)})
+            </.tab_link>
+            <div class="ml-auto">
               <.button
-                variant="ghost"
-                size="sm"
-                disabled={publishing?(@publishing, entry)}
-                phx-value-guid={entry.id}
-                phx-click={
-                  JS.push("select_post")
-                  |> show_modal("republish-modal")
+                variant="primary"
+                shadow="secondary"
+                disabled={
+                  @publishing_all? or @tab != :unpublished or
+                    not any_publishable?(tabs.unpublished)
                 }
+                phx-click={show_modal("publish-all-modal")}
               >
-                <.icon
-                  name="hero-arrow-path"
-                  class={["size-4", publishing?(@publishing, entry) && "animate-spin"]}
-                />
-                {if publishing?(@publishing, entry), do: "Re-publishing…", else: "Re-publish"}
+                <.icon :if={@publishing_all?} name="hero-arrow-path" class="size-5
+     animate-spin" />
+                {if @publishing_all?, do: "Publishing…", else: "Publish all"}
               </.button>
             </div>
-          </div>
-        </div>
+          </nav>
 
-        <.confirm_modal
-          id="publish-modal"
-          title="Publish this post"
-          confirm="publish_post"
-          cta="Publish"
-        >
-          This writes a <span class="font-mono text-xs">site.standard.document</span>
-          record to your atproto repo, making it publicly discoverable. You can re-publish to update it later.
-        </.confirm_modal>
+          <%= case @tab do %>
+            <% :published -> %>
+              <p :if={tabs.published == []} class="mt-6 text-ink/55">
+                Nothing published from this feed yet.
+              </p>
+              <div class="mt-6 space-y-3">
+                <div
+                  :for={entry <- tabs.published}
+                  class="flex items-center gap-4 rounded-2xl border-2 border-ink bg-paper p-4"
+                >
+                  <.cover_thumb entry={entry} />
 
-        <.confirm_modal
-          id="republish-modal"
-          title="Re-publish this post"
-          confirm="republish_post"
-          cta="Re-publish"
-        >
-          This overwrites the existing <span class="font-mono text-xs">site.standard.document</span>
-          record with the latest content from your feed.
-        </.confirm_modal>
+                  <div class="min-w-0 flex-1">
+                    <.link
+                      navigate={~p"/sites/#{@site.id}/posts/#{entry.rkey}"}
+                      class="block truncate font-bold text-ink/70 hover:text-ink"
+                    >
+                      {entry.title}
+                    </.link>
+                    <div :if={entry.summary} class="mt-0.5 truncate text-sm text-ink/50">
+                      {entry.summary}
+                    </div>
+                    <div class="mt-1 flex items-center gap-2 text-xs text-ink/45">
+                      <span class="flex items-center gap-1">
+                        <.icon name="hero-check" class="size-3.5" /> Published
+                      </span>
+                      <span class="truncate text-ink/40">{entry.rkey}</span>
+                      <span :if={stale?(@posts, entry)} class="font-bold text-amber-600">
+                        Changed since publish
+                      </span>
+                      <span :if={entry.cover_status in [:too_large, :not_image]}>
+                        {cover_note(entry.cover_status)}
+                      </span>
+                    </div>
+                  </div>
 
-        <.confirm_modal
-          id="publish-all-modal"
-          title="Publish all posts"
-          confirm="publish_all_post"
-          cta="Publish all"
-        >
-          This writes a <span class="font-mono text-xs">site.standard.document</span>
-          record for every unpublished post in your feed, making each publicly discoverable. You can re-publish to update them later.
-        </.confirm_modal>
+                  <.button
+                    variant="ghost"
+                    size="sm"
+                    disabled={publishing?(@publishing, entry)}
+                    phx-value-rkey={entry.rkey}
+                    phx-click={JS.push("select_post") |> show_modal("republish-modal")}
+                  >
+                    <.icon
+                      name="hero-arrow-path"
+                      class={["size-4", publishing?(@publishing, entry) && "animate-spin"]}
+                    />
+                    {if publishing?(@publishing, entry), do: "Re-publishing…", else: "Re-publish"}
+                  </.button>
+                </div>
+              </div>
+            <% :unpublished -> %>
+              <p :if={tabs.unpublished == []} class="mt-6 text-ink/55">
+                Everything in the feed is published.
+              </p>
+
+              <div class="mt-6 space-y-3">
+                <div
+                  :for={entry <- tabs.unpublished}
+                  class="flex items-center gap-4 rounded-2xl border-2 border-ink bg-paper p-4"
+                >
+                  <.cover_thumb entry={entry} />
+
+                  <div class="min-w-0 flex-1">
+                    <div class="truncate font-bold">{entry.title}</div>
+                    <div :if={entry.summary} class="mt-0.5 truncate text-sm text-ink/55">
+                      {entry.summary}
+                    </div>
+                    <div class="mt-1 flex items-center gap-2 text-xs text-ink/45">
+                      <span :if={entry.published_at}>
+                        {Calendar.strftime(entry.published_at, "%b %d, %Y")}
+                      </span>
+                      <span :if={entry.cover_status in [:too_large, :not_image]}>
+                        {cover_note(entry.cover_status)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <.button
+                    :if={has_date?(entry)}
+                    variant="primary"
+                    size="sm"
+                    disabled={publishing?(@publishing, entry)}
+                    phx-value-rkey={entry.rkey}
+                    phx-click={JS.push("select_post") |> show_modal("publish-modal")}
+                  >
+                    <.icon
+                      :if={publishing?(@publishing, entry)}
+                      name="hero-arrow-path"
+                      class="size-4 animate-spin"
+                    />
+                    {if publishing?(@publishing, entry), do: "Publishing…", else: "Publish"}
+                  </.button>
+                  <span :if={not has_date?(entry)} class="flex-none text-xs text-ink/40">No date</span>
+                </div>
+              </div>
+            <% :outside_feed -> %>
+              <p :if={outside == []} class="mt-6 text-ink/55">
+                Every published document is in the current feed.
+              </p>
+              <div class="mt-6 space-y-2">
+                <div
+                  :for={doc <- outside}
+                  class="flex items-center gap-4 rounded-2xl border-2 border-ink bg-paper p-4"
+                >
+                  <div class="min-w-0 flex-1">
+                    <.link
+                      navigate={~p"/sites/#{@site.id}/posts/#{doc.rkey}"}
+                      class="block truncate font-bold text-ink/70 hover:text-ink"
+                    >
+                      {doc.title}
+                    </.link>
+                    <div class="mt-1 flex items-center gap-2 text-xs text-ink/45">
+                      <span class="truncate text-ink/40">{doc.rkey}</span>
+                      <span :if={doc.published_at}>
+                        {Calendar.strftime(doc.published_at, "%b %d, %Y")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% :setup -> %>
+              <div class="mt-6 max-w-prose space-y-4 text-sm text-ink/60">
+                <p>
+                  These posts don't declare a
+                  <span class="font-mono text-xs">site.standard.document</span>
+                  link, so annot.at doesn't know which record key to publish them under. To fix
+                  that, each post's page needs a tag in its <span class="font-mono text-xs">&lt;head&gt;</span>:
+                </p>
+
+                <pre class="overflow-x-auto rounded-xl border-2 border-ink/15 bg-ink/5
+             p-3 font-mono text-xs text-ink/75">&lt;link
+      rel="site.standard.document"
+      href="at://did:plc:your-did/site.standard.document/3lucidatid123"
+    /&gt;</pre>
+
+                <p>
+                  The thing in the <code>href</code>
+                  is the <.link
+                    class="underline"
+                    href="https://atproto.com/specs/at-uri-scheme"
+                  >at-uri</.link>, the atproto standardized reference to a record. It consists of your <code>did</code>,
+                  the collection <code>site.standard.document</code>, and the record key (<code>rkey</code>).
+                  The standard requires record keys to be
+                  <span class="font-bold text-ink/75">TIDs</span>
+                  (<.link class="underline" href="https://atproto.com/specs/tid">timestamp identifiers</.link>),
+                  sortable, roughly time-ordered keys like <span class="font-mono text-xs">3lucidatid123</span>. There are two
+                  good ways to give each post a stable one:
+                </p>
+
+                <ul class="list-disc space-y-2 pl-5">
+                  <li>
+                    <span class="font-bold text-ink/75">Derive it
+                    deterministically</span>
+                    from something stable, like the post's publish date or a hash of its
+                    URL. Given the same input, you get the same output, so your build can regenerate it on demand and
+                    nothing needs to be stored. Here's an <.link
+                      class="underline"
+                      href="https://tangled.org/jola.dev/jola.dev/blob/2503ad1df3fb4a4018da279498fb761d60872613/lib/jola_dev_web/components/layouts/root.html.heex#L47-50"
+                    >example of a statically generated blog doing that</.link>.
+                  </li>
+                  <li>
+                    <span class="font-bold text-ink/75">Generate one and store it</span>
+                    in the post's frontmatter, metadata, or on the post record if you've got a database backed site.
+                    You can use a randomly generated one, as long as you store it and keep returning the same one.
+                  </li>
+                </ul>
+
+                <p>
+                  Whichever you pick, the key must be stable. If it changes, annot.at will be unable to connect the
+                  page with the standard.site document record. Apps like Bluesky also use this record to check if they
+                  should render the special preview frame, the <code>link</code>
+                  on the page has to match the document record.
+                </p>
+
+                <p class="border-t-2 border-ink/10 pt-4 text-xs text-ink/45">
+                  The TID requirement will hopefully be relaxed in a future version of
+                  the
+                  standard, so human-readable keys like your post slug would work too. <.link
+                    href="https://tangled.org/standard.site/lexicons/issues/7"
+                    target="_blank"
+                    class="font-bold underline hover:text-ink"
+                  >
+                                   Join the discussion
+                                 </.link>.
+                </p>
+              </div>
+              <div class="mt-6 space-y-3">
+                <div
+                  :for={entry <- tabs.setup}
+                  class="flex items-center gap-4 rounded-2xl border-2 border-dashed border-ink/25 p-4"
+                >
+                  <.cover_thumb entry={entry} />
+
+                  <div class="min-w-0 flex-1">
+                    <div class="truncate font-bold text-ink/60">{entry.title}</div>
+                    <div :if={entry.summary} class="mt-0.5 truncate text-sm text-ink/45">
+                      {entry.summary}
+                    </div>
+                  </div>
+                </div>
+              </div>
+          <% end %>
+
+          <.confirm_modal
+            id="publish-modal"
+            title="Publish this post"
+            confirm="publish_post"
+            cta="Publish"
+          >
+            This writes a <span class="font-mono text-xs">site.standard.document</span>
+            record to your atproto repo, making it publicly discoverable. You can re-publish to update it later.
+          </.confirm_modal>
+
+          <.confirm_modal
+            id="republish-modal"
+            title="Re-publish this post"
+            confirm="publish_post"
+            cta="Re-publish"
+          >
+            This overwrites the existing <span class="font-mono text-xs">site.standard.document</span>
+            record with the latest content from your feed.
+          </.confirm_modal>
+
+          <.confirm_modal
+            id="publish-all-modal"
+            title="Publish all posts"
+            confirm="publish_all_post"
+            cta="Publish all"
+          >
+            This writes a <span class="font-mono text-xs">site.standard.document</span>
+            record for every unpublished post in your feed, making each publicly discoverable. You can re-publish to update them later.
+          </.confirm_modal>
+        </.async_result>
       </.async_result>
     </Layouts.dashboard>
     """
@@ -204,7 +327,7 @@ defmodule AnnotAtWeb.PostsLive do
   @impl Phoenix.LiveView
   def mount(%{"id" => id}, _session, socket) do
     site = Publishing.get_site!(socket.assigns.current_scope, id)
-    posts = Map.new(Publishing.list_posts(site), &{&1.guid, &1})
+    posts = Map.new(Publishing.list_posts(site), &{&1.rkey, &1})
 
     socket =
       socket
@@ -213,29 +336,43 @@ defmodule AnnotAtWeb.PostsLive do
         site: site,
         posts: posts,
         publishing_all?: false,
-        selected_guid: nil,
+        selected_rkey: nil,
         publishing: MapSet.new()
       )
       |> load_feed(site)
+      |> load_documents(site)
 
     {:ok, socket}
   end
 
   @impl Phoenix.LiveView
-  def handle_event("select_post", %{"guid" => guid}, socket) do
-    {:noreply, assign(socket, selected_guid: guid)}
+  def handle_params(params, _uri, socket) do
+    tab =
+      case Map.get(params, "tab") do
+        "unpublished" -> :unpublished
+        "outside_feed" -> :outside_feed
+        "setup" -> :setup
+        _ -> :published
+      end
+
+    {:noreply, assign(socket, tab: tab)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("select_post", %{"rkey" => rkey}, socket) do
+    {:noreply, assign(socket, selected_rkey: rkey)}
   end
 
   def handle_event("publish_post", _params, socket) do
-    %{selected_guid: guid, site: site, current_scope: scope, feed: feed} =
+    %{selected_rkey: rkey, site: site, current_scope: scope, feed: feed} =
       socket.assigns
 
     with %AsyncResult{ok?: true, result: %{entries: entries}} <- feed,
-         %{published_at: %DateTime{}} = entry <- Enum.find(entries, &(&1.id == guid)) do
+         %{published_at: %DateTime{}} = entry <- Enum.find(entries, &(&1.rkey == rkey)) do
       socket =
         socket
-        |> assign(publishing: MapSet.put(socket.assigns.publishing, guid))
-        |> start_async({:publish, guid}, fn -> create_document(scope, site, entry) end)
+        |> assign(publishing: MapSet.put(socket.assigns.publishing, rkey))
+        |> start_async({:publish, rkey}, fn -> create_document(scope, site, entry) end)
 
       {:noreply, socket}
     else
@@ -245,40 +382,15 @@ defmodule AnnotAtWeb.PostsLive do
     end
   end
 
-  def handle_event("republish_post", _params, socket) do
-    %{selected_guid: guid, site: site, current_scope: scope, feed: feed, posts: posts} =
+  def handle_event("publish_all_post", _params, socket) do
+    %{site: site, current_scope: scope, feed: feed, documents: documents} =
       socket.assigns
 
     with %AsyncResult{ok?: true, result: %{entries: entries}} <- feed,
-         %{published_at: %DateTime{}} = entry <-
-           Enum.find(
-             entries,
-             &(&1.id ==
-                 guid)
-           ),
-         {:ok, %Post{} = post} <- Map.fetch(posts, guid) do
-      socket =
-        socket
-        |> assign(publishing: MapSet.put(socket.assigns.publishing, guid))
-        |> start_async({:publish, guid}, fn -> update_document(scope, site, post, entry) end)
-
-      {:noreply, socket}
-    else
-      reason ->
-        Logger.warning("PostsLive: failed to re-publish", reason: inspect(reason))
-        {:noreply, put_flash(socket, :error, "Couldn't re-publish, try again.")}
-    end
-  end
-
-  def handle_event("publish_all_post", _params, socket) do
-    %{site: site, current_scope: scope, feed: feed, posts: posts} =
-      socket.assigns
-
-    with %AsyncResult{ok?: true, result: %{entries: entries}} <- feed do
-      to_publish =
-        entries
-        |> pending(posts)
-        |> Enum.filter(fn post -> has_date?(post) && post.rkey end)
+         %AsyncResult{ok?: true, result: docs} <- documents do
+      partitioned = partition(entries, docs)
+      unpublished = Map.fetch!(partitioned, :unpublished)
+      to_publish = Enum.filter(unpublished, &has_date?/1)
 
       socket =
         socket
@@ -290,11 +402,12 @@ defmodule AnnotAtWeb.PostsLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_async(:publish_all, {:ok, new_posts}, socket) do
+  def handle_async(:publish_all, {:ok, {new_docs, new_posts}}, socket) do
     socket =
       socket
       |> assign(publishing_all?: false)
       |> assign(posts: Map.merge(socket.assigns.posts, new_posts))
+      |> update_documents(&(Enum.reverse(new_docs) ++ &1))
 
     {:noreply, socket}
   end
@@ -310,36 +423,48 @@ defmodule AnnotAtWeb.PostsLive do
     {:noreply, socket}
   end
 
-  def handle_async({:publish, guid}, {:ok, {:ok, post}}, socket) do
-    {:noreply,
-     assign(socket,
-       publishing: MapSet.delete(socket.assigns.publishing, guid),
-       posts: Map.put(socket.assigns.posts, guid, post)
-     )}
+  def handle_async({:publish, rkey}, {:ok, {:ok, {document, post}}}, socket) do
+    socket =
+      socket
+      |> assign(
+        publishing: MapSet.delete(socket.assigns.publishing, rkey),
+        posts: Map.put(socket.assigns.posts, rkey, post)
+      )
+      |> upsert_document(document)
+
+    {:noreply, socket}
   end
 
-  def handle_async({:publish, guid}, result, socket) do
-    Logger.warning("PostsLive: write failed", reason: inspect(result), guid: guid)
+  def handle_async({:publish, rkey}, result, socket) do
+    Logger.warning("PostsLive: write failed", reason: inspect(result), rkey: rkey)
 
     socket =
       socket
-      |> assign(publishing: MapSet.delete(socket.assigns.publishing, guid))
+      |> assign(publishing: MapSet.delete(socket.assigns.publishing, rkey))
       |> put_flash(:error, "Couldn't publish, try again.")
 
     {:noreply, socket}
   end
 
-  def handle_async(:load_feed, {:ok, {:ok, %{feed: feed, posts: posts}}}, socket) do
+  def handle_async(:load_feed, {:ok, {:ok, feed}}, socket) do
     {:noreply,
      assign(socket,
-       feed: AsyncResult.ok(socket.assigns.feed, feed),
-       posts: posts
+       feed: AsyncResult.ok(socket.assigns.feed, feed)
      )}
   end
 
   def handle_async(:load_feed, {:ok, reason}, socket) do
     Logger.warning("PostsLive: failed to load feed", reason: inspect(reason))
     {:noreply, assign(socket, feed: AsyncResult.failed(socket.assigns.feed, reason))}
+  end
+
+  def handle_async(:load_documents, {:ok, {:ok, documents}}, socket) do
+    {:noreply, assign(socket, documents: AsyncResult.ok(socket.assigns.documents, documents))}
+  end
+
+  def handle_async(:load_documents, {:ok, reason}, socket) do
+    Logger.warning("PostsLive: failed to load documents", reason: inspect(reason))
+    {:noreply, assign(socket, documents: AsyncResult.failed(socket.assigns.documents, reason))}
   end
 
   defp load_feed(socket, site) do
@@ -350,13 +475,28 @@ defmodule AnnotAtWeb.PostsLive do
       |> assign(feed: AsyncResult.loading())
       |> start_async(:load_feed, fn ->
         with {:ok, feed} <- Client.load(site.feed_url) do
-          feed = Client.resolve_documents(feed, user_did)
-          posts = Publishing.adopt(site, feed.entries)
-          {:ok, %{feed: feed, posts: posts}}
+          {:ok, Client.resolve_documents(feed, user_did)}
         end
       end)
     else
       assign(socket, feed: AsyncResult.loading())
+    end
+  end
+
+  defp load_documents(socket, site) do
+    if connected?(socket) do
+      user = socket.assigns.current_scope.user
+      site_uri = StandardSite.publication_uri(user.did, site.rkey)
+
+      socket
+      |> assign(documents: AsyncResult.loading())
+      |> start_async(:load_documents, fn ->
+        with {:ok, documents} <- StandardSite.list_documents(user.id) do
+          {:ok, Enum.filter(documents, &(&1.site == site_uri))}
+        end
+      end)
+    else
+      assign(socket, documents: AsyncResult.loading())
     end
   end
 
@@ -369,8 +509,7 @@ defmodule AnnotAtWeb.PostsLive do
       published_at: entry.published_at,
       description: entry.summary,
       text_content: text_content_of(entry.content),
-      content: entry.content,
-      cover_image: fetch_cover(entry),
+      content: if(entry.content, do: {:html, entry.content}),
       tags: entry.categories
     }
   end
@@ -389,49 +528,96 @@ defmodule AnnotAtWeb.PostsLive do
   defp create_document(scope, site, entry) do
     document = to_document(entry, site, scope.user)
 
-    with {:ok, _} <- StandardSite.put_document(scope.user.id, document) do
-      Publishing.create_post(site, %{
-        guid: entry.id,
-        rkey: document.rkey,
-        content_hash: Entry.hash(entry)
-      })
-    end
-  end
-
-  defp update_document(scope, site, %Post{} = post, entry) do
-    document = to_document(entry, site, scope.user)
-
-    with {:ok, _} <- StandardSite.put_document(scope.user.id, document) do
-      Publishing.update_post(post, %{content_hash: Entry.hash(entry)})
+    with {:ok, _} <- StandardSite.put_document(scope.user.id, document, fetch_cover(entry)),
+         {:ok, post} <-
+           Publishing.track_post(site, %{rkey: document.rkey, content_hash: Entry.hash(entry)}) do
+      {:ok, {document, post}}
     end
   end
 
   defp publish_all(scope, site, entries) do
-    Enum.reduce(entries, %{}, fn entry, acc ->
+    Enum.reduce(entries, {[], %{}}, fn entry, {documents, posts} ->
       case create_document(scope, site, entry) do
-        {:ok, post} -> Map.put(acc, entry.id, post)
-        _ -> acc
+        {:ok, {document, post}} -> {[document | documents], Map.put(posts, document.rkey, post)}
+        _ -> {documents, posts}
       end
     end)
   end
 
-  defp pending(entries, posts) do
-    Enum.reject(entries, &Map.has_key?(posts, &1.id))
+  defp partition(entries, documents) do
+    document_rkeys = MapSet.new(documents, & &1.rkey)
+
+    groups =
+      Enum.group_by(entries, fn entry ->
+        cond do
+          is_nil(entry.rkey) -> :setup
+          MapSet.member?(document_rkeys, entry.rkey) -> :published
+          true -> :unpublished
+        end
+      end)
+
+    %{
+      published: Map.get(groups, :published, []),
+      unpublished: Map.get(groups, :unpublished, []),
+      setup: Map.get(groups, :setup, [])
+    }
   end
 
-  defp done(entries, posts) do
-    Enum.filter(entries, &Map.has_key?(posts, &1.id))
+  defp outside_feed(entries, documents) do
+    entry_rkeys = MapSet.new(entries, & &1.rkey)
+    Enum.reject(documents, &MapSet.member?(entry_rkeys, &1.rkey))
   end
 
-  defp any_pending?(entries, posts) do
-    entries
-    |> pending(posts)
-    |> Enum.any?(&has_date?/1)
+  defp stale?(posts, %Entry{} = entry) do
+    case Map.fetch(posts, entry.rkey) do
+      {:ok, %Post{content_hash: hash}} -> hash != Entry.hash(entry)
+      :error -> false
+    end
   end
+
+  defp any_publishable?(entries), do: Enum.any?(entries, &has_date?/1)
 
   defp has_date?(entry), do: match?(%DateTime{}, entry.published_at)
 
-  defp publishing?(publishing, entry), do: MapSet.member?(publishing, entry.id)
+  defp publishing?(publishing, entry), do: MapSet.member?(publishing, entry.rkey)
+
+  defp update_documents(socket, fun) do
+    documents = socket.assigns.documents
+    assign(socket, documents: AsyncResult.ok(documents, fun.(documents.result)))
+  end
+
+  defp upsert_document(socket, document) do
+    update_documents(socket, fn documents ->
+      if Enum.any?(documents, &(&1.rkey == document.rkey)) do
+        Enum.map(documents, fn doc ->
+          if doc.rkey == document.rkey, do: document, else: doc
+        end)
+      else
+        [document | documents]
+      end
+    end)
+  end
+
+  attr :patch, :string, required: true
+  attr :active, :boolean, required: true
+  slot :inner_block, required: true
+
+  defp tab_link(assigns) do
+    ~H"""
+    <.link
+      patch={@patch}
+      class={[
+        "rounded-full border-2 px-3 py-1 text-sm font-bold transition-colors",
+        if(@active,
+          do: "border-ink bg-ink text-paper",
+          else: "border-ink/15 text-ink/55 hover:border-ink/40 hover:text-ink"
+        )
+      ]}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
 
   attr :id, :string, required: true
   attr :title, :string, required: true
@@ -457,21 +643,6 @@ defmodule AnnotAtWeb.PostsLive do
       </div>
     </.modal>
     """
-  end
-
-  defp entry_to_post(posts, %Entry{} = entry) do
-    result =
-      Enum.find(posts, fn {_key, %Post{} = post} ->
-        post.guid == entry.id
-      end)
-
-    case result do
-      {_key, value} ->
-        value
-
-      _ ->
-        nil
-    end
   end
 
   defp fetch_cover(%Entry{cover_status: status, image: url})

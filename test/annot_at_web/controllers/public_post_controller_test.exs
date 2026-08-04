@@ -4,6 +4,7 @@ defmodule AnnotAtWeb.PublicPostControllerTest do
 
   alias AnnotAt.Atproto.DIDDocument
   alias AnnotAt.Atproto.StandardSite
+  alias AnnotAt.Atproto.StandardSite.Document
 
   @did "did:plc:ewvi7nxzyoun6zhxrhs64oiz"
   @rkey "3mlhhbujc22gw"
@@ -11,16 +12,14 @@ defmodule AnnotAtWeb.PublicPostControllerTest do
   test "GET /p/:did/rkey renders the document", %{conn: conn} do
     did_doc = %DIDDocument{did: @did, handle: "jola.dev", pds_endpoint: "https://pds.example"}
 
-    doc = %{
-      "title" => "Running local models on M4",
-      "publishedAt" => "2026-03-23T12:00:00Z",
-      "site" => "at://#{@did}/site.standard.publication/pub1",
-      "tags" => ["ai"],
-      "content" => %{
-        "$type" => "org.wordpress.html",
-        "html" => "<p>Hello<strong>world</strong>.</p>"
-      },
-      "textContent" => "Hello world."
+    doc = %Document{
+      rkey: @rkey,
+      title: "Running local models on M4",
+      published_at: ~U[2026-03-23 12:00:00Z],
+      site: "at://#{@did}/site.standard.publication/pub1",
+      tags: ["ai"],
+      content: {:html, "<p>Hello<strong>world</strong>.</p>"},
+      text_content: "Hello world."
     }
 
     pub = %{"name" => "jola.dev blog", "icon" => nil}

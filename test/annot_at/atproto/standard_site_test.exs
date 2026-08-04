@@ -127,6 +127,27 @@ defmodule AnnotAt.Atproto.StandardSiteTest do
 
       assert {:ok, %{"uri" => "at://y"}} = StandardSite.put_document(user.id, doc)
     end
+
+    test "serializes tagged content into the record envelope" do
+      user = create_user()
+
+      expect(Latch, :procedure, fn AnnotAt.Latch, @did, "com.atproto.repo.putRecord", body ->
+        assert %{"$type" => "org.wordpress.html", "html" => "<p>hi</p>"} ==
+                 body.record["content"]
+
+        {:ok, %{"uri" => "at://y"}}
+      end)
+
+      doc = %Document{
+        rkey: "post-3",
+        site: StandardSite.publication_uri(@did, @rkey),
+        title: "Hello",
+        published_at: ~U[2026-01-01 00:00:00Z],
+        content: {:html, "<p>hi</p>"}
+      }
+
+      assert {:ok, _} = StandardSite.put_document(user.id, doc)
+    end
   end
 
   describe "verify_ownership/2" do
@@ -224,6 +245,37 @@ path" do
       assert "https://jola.dev" == doc["url"]
       assert "blog" == doc["description"]
       assert %{"showInDiscover" => true} == doc["preferences"]
+    end
+  end
+
+  describe "list_documents/1" do
+    test "returns parsed Documents" do
+      user = create_user()
+
+      expect(Latch, :query, fn AnnotAt.Latch, @did, "com.atproto.repo.listRecords", opts ->
+        params = opts[:params]
+        assert @did == params[:repo]
+        assert "site.standard.document" == params[:collection]
+        assert 100 == params[:limit]
+
+        {:ok,
+         %{
+           "records" => [
+             %{
+               "uri" => "at://#{@did}/site.standard.document/#{@rkey}",
+               "value" => %{
+                 "site" => "at://#{@did}/site.standard.publication/abc123",
+                 "title" => "Hello",
+                 "publishedAt" => "2026-01-01T00:00:00Z"
+               }
+             }
+           ]
+         }}
+      end)
+
+      assert {:ok, [%Document{} = doc]} = StandardSite.list_documents(user.id)
+      assert @rkey == doc.rkey
+      assert "Hello" == doc.title
     end
   end
 

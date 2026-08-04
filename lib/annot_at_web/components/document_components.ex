@@ -16,11 +16,11 @@ defmodule AnnotAtWeb.DocumentComponents do
       <img
         :if={@cover_url}
         src={@cover_url}
-        alt={@doc["title"]}
+        alt={@doc.title}
         class="aspect-[1.91/1] w-full rounded-2xl border-2 border-ink object-cover"
       />
 
-      <h1 class="mt-6 font-display text-4xl font-bold tracking-tight">{@doc["title"]}</h1>
+      <h1 class="mt-6 font-display text-4xl font-bold tracking-tight">{@doc.title}</h1>
       <div class="mt-3 flex items-center gap-2.5 text-sm text-ink/55">
         <img
           :if={@author.avatar_url}
@@ -30,12 +30,12 @@ defmodule AnnotAtWeb.DocumentComponents do
         />
         <span class="font-bold text-ink/75">{@author.display_name || @author.handle}</span>
         <span aria-hidden="true">-</span>
-        <time :if={@doc["publishedAt"]}>{format_date(@doc["publishedAt"])}</time>
+        <time :if={@doc.published_at}>{format_date(@doc.published_at)}</time>
       </div>
 
-      <div :if={@doc["tags"] not in [nil, []]} class="mt-4 flex flex-wrap gap-2">
+      <div :if={@doc.tags not in [nil, []]} class="mt-4 flex flex-wrap gap-2">
         <span
-          :for={tag <- @doc["tags"]}
+          :for={tag <- @doc.tags}
           class="rounded-full border-2 border-ink px-2.5 py-0.5 text-xs font-bold"
         >
           {tag}
@@ -43,11 +43,11 @@ defmodule AnnotAtWeb.DocumentComponents do
       </div>
 
       <div class="doc-prose mt-8">
-        <%= case @doc["content"] do %>
-          <% %{"$type" => "org.wordpress.html", "html" => html} -> %>
+        <%= case @doc.content do %>
+          <% {:html, html} -> %>
             {raw(sanitize(html))}
           <% _ -> %>
-            <p>{preview(@doc["textContent"])}</p>
+            <p>{preview(@doc.text_content)}</p>
         <% end %>
       </div>
     </article>
@@ -64,10 +64,5 @@ defmodule AnnotAtWeb.DocumentComponents do
   defp preview(text) when byte_size(text) <= 280, do: text
   defp preview(text), do: String.slice(text, 0, 280) <> "..."
 
-  defp format_date(iso) do
-    case DateTime.from_iso8601(iso) do
-      {:ok, dt, _} -> Calendar.strftime(dt, "%B %-d, %Y")
-      _ -> iso
-    end
-  end
+  defp format_date(%DateTime{} = dt), do: Calendar.strftime(dt, "%B %-d, %Y")
 end

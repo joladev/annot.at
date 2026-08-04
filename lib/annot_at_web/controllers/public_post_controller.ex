@@ -12,8 +12,8 @@ defmodule AnnotAtWeb.PublicPostController do
         render(conn, :show,
           doc: doc,
           author: author(doc, did_doc),
-          cover_url: blob(did_doc.pds_endpoint, did, doc["coverImage"]),
-          page_title: doc["title"]
+          cover_url: blob(did_doc.pds_endpoint, did, doc.cover_image),
+          page_title: doc.title
         )
 
       {:error, error} ->
@@ -27,7 +27,7 @@ defmodule AnnotAtWeb.PublicPostController do
   end
 
   defp author(doc, did_doc) do
-    case StandardSite.get_public_publication(doc["site"]) do
+    case StandardSite.get_public_publication(doc.site) do
       {:ok, pub, pub_doc} ->
         %{
           avatar_url: blob(pub_doc.pds_endpoint, pub_doc.did, pub["icon"]),

@@ -10,7 +10,6 @@ defmodule AnnotAt.Publishing do
   alias AnnotAt.Accounts.Scope
   alias AnnotAt.Accounts.User
   alias AnnotAt.Atproto.TID
-  alias AnnotAt.Feeds.Entry
   alias AnnotAt.Publishing.Post
   alias AnnotAt.Publishing.Site
   alias AnnotAt.Repo
@@ -93,32 +92,15 @@ defmodule AnnotAt.Publishing do
     Repo.all(from p in Post, where: p.site_id == ^site_id, order_by: [desc: p.inserted_at])
   end
 
-  def get_post!(%Site{id: site_id}, id) do
-    Repo.get_by!(Post, id: id, site_id: site_id)
-  end
-
-  def create_post(%Site{id: site_id}, attrs) do
+  def track_post(%Site{id: site_id}, attrs) do
     %Post{site_id: site_id}
     |> Post.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def update_post(%Post{} = post, attrs) do
-    post
-    |> Post.changeset(attrs)
-    |> Repo.update()
-  end
-
-  def adopt(%Site{} = site, entries) do
-    tracked = MapSet.new(list_posts(site), & &1.guid)
-
-    entries
-    |> Enum.filter(fn entry -> is_binary(entry.rkey) and entry.id not in tracked end)
-    |> Enum.each(fn entry ->
-      create_post(site, %{guid: entry.id, rkey: entry.rkey, content_hash: Entry.hash(entry)})
-    end)
-
-    Map.new(list_posts(site), &{&1.guid, &1})
+    |> Repo.insert(
+      on_conflict: [
+        set: [content_hash: attrs.content_hash, updated_at: DateTime.utc_now(:second)]
+      ],
+      conflict_target: [:site_id, :rkey]
+    )
   end
 
   defp verify_user_ownership!(%Site{user_id: user_id}, user_id), do: :ok

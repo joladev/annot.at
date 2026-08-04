@@ -29,21 +29,30 @@ defmodule AnnotAt.Atproto.StandardSite do
 
   def get_document(user_id, rkey) do
     with {:ok, user} <- fetch_user(user_id),
-         {:ok, %{"value" => value}} <-
+         {:ok, %{"value" => value, "uri" => uri}} <-
            Latch.query(AnnotAt.Latch, user.did, "com.atproto.repo.getRecord",
              params: [repo: user.did, collection: @document, rkey: rkey]
            ) do
-      {:ok, value}
+      {:ok, Document.from_record(uri, value)}
     end
   end
 
-  @doc """
-  Creates or updates a document record.
-  """
-  @spec put_document(integer(), Document.t()) :: {:ok, map()} | {:error, term()}
-  def put_document(user_id, %Document{} = document) do
+  def list_documents(user_id) do
     with {:ok, user} <- fetch_user(user_id),
-         {:ok, cover} <- upload_image(user, document.cover_image) do
+         {:ok, %{"records" => records}} <-
+           Latch.query(AnnotAt.Latch, user.did, "com.atproto.repo.listRecords",
+             params: [repo: user.did, collection: @document, limit: 100]
+           ) do
+      {:ok,
+       Enum.map(records, fn %{"uri" => uri, "value" => value} ->
+         Document.from_record(uri, value)
+       end)}
+    end
+  end
+
+  def put_document(user_id, %Document{} = document, cover_upload \\ nil) do
+    with {:ok, user} <- fetch_user(user_id),
+         {:ok, cover} <- upload_image(user, cover_upload) do
       put_record(user, @document, document.rkey, document_record(document, cover))
     end
   end
@@ -140,7 +149,11 @@ defmodule AnnotAt.Atproto.StandardSite do
     "at://#{did}/site.standard.document/#{rkey}"
   end
 
-  def get_public_document(did, rkey), do: get_public_record(did, @document, rkey)
+  def get_public_document(did, rkey) do
+    with {:ok, value, did_doc} <- get_public_record(did, @document, rkey) do
+      {:ok, Document.from_record(document_uri(did, rkey), value), did_doc}
+    end
+  end
 
   def get_public_publication("at://" <> _ = site_uri) do
     with {:ok, did, rkey} <- parse_aturi(site_uri, @publication) do
@@ -229,12 +242,14 @@ defmodule AnnotAt.Atproto.StandardSite do
 
   defp to_content(nil), do: nil
 
-  defp to_content(content) do
+  defp to_content({:html, html}) do
     %{
       "$type" => @html_content,
-      "html" => truncate_graphemes(content, @html_max_graphemes)
+      "html" => truncate_graphemes(html, @html_max_graphemes)
     }
   end
+
+  defp to_content({:unknown, content}), do: content
 
   defp truncate_graphemes(text, max) do
     if String.length(text) <= max do
