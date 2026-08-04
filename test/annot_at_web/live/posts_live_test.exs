@@ -7,6 +7,7 @@ defmodule AnnotAtWeb.PostsLiveTest do
   alias AnnotAt.Accounts
   alias AnnotAt.Accounts.Scope
   alias AnnotAt.Atproto.StandardSite
+  alias AnnotAt.Atproto.StandardSite.Document
   alias AnnotAt.Feeds.Client
   alias AnnotAt.Feeds.Entry
   alias AnnotAt.Feeds.Feed
@@ -215,6 +216,64 @@ defmodule AnnotAtWeb.PostsLiveTest do
 
     assert render_async(lv, 2000) =~ "Published"
     assert [%{rkey: ^rkey}] = Publishing.list_posts(site)
+  end
+
+  test "removing a post deletes the record and flips the row back", %{conn: conn} do
+    user = create_user()
+    scope = Scope.for_user(user)
+    site = create_site(scope)
+    published_at = ~U[2024-10-02 13:00:00Z]
+    rkey = TID.at_time(published_at, 1)
+
+    document = %Document{
+      rkey: rkey,
+      site: StandardSite.publication_uri(user.did, site.rkey),
+      title: "First Post",
+      published_at: published_at
+    }
+
+    feed = %Feed{
+      title: "Blog",
+      entries: [
+        %Entry{
+          id: "guid-1",
+          url: "https://example.com/posts/first",
+          title: "First Post",
+          published_at: published_at
+        }
+      ]
+    }
+
+    expect(StandardSite, :list_documents, fn _user_id -> {:ok, [document]} end)
+    expect(Client, :load, fn _url -> {:ok, feed} end)
+
+    expect(Client, :resolve_documents, fn _feed, _did ->
+      %{feed | entries: Enum.map(feed.entries, &%{&1 | rkey: rkey})}
+    end)
+
+    expect(StandardSite, :delete_document, fn user_id, doc_rkey ->
+      assert user.id == user_id
+      assert rkey == doc_rkey
+      {:ok, %{}}
+    end)
+
+    {:ok, lv, _html} =
+      conn
+      |> init_test_session(%{user_id: user.id})
+      |> live(~p"/sites/#{site.id}/posts")
+
+    assert render_async(lv, 2000) =~ "Published (1)"
+
+    lv
+    |> element("#remove-#{rkey}")
+    |> render_click()
+
+    lv
+    |> element("#delete-modal-confirm")
+    |> render_click()
+
+    assert render_async(lv, 2000) =~ "Nothing published from this feed yet."
+    assert [] = Publishing.list_posts(site)
   end
 
   defp create_user do

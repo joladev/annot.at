@@ -1,6 +1,8 @@
 defmodule AnnotAtWeb.PostsLive do
   use AnnotAtWeb, :live_view
 
+  alias AnnotAt.Accounts
+  alias AnnotAt.Atproto
   alias AnnotAt.Atproto.StandardSite
   alias AnnotAt.Atproto.StandardSite.Document
   alias AnnotAt.Feeds.Client
@@ -92,10 +94,10 @@ defmodule AnnotAtWeb.PostsLive do
               </p>
               <div class="mt-6 space-y-3">
                 <div
-                  :for={entry <- tabs.published}
+                  :for={{entry, doc} <- tabs.published}
                   class="flex items-center gap-4 rounded-2xl border-2 border-ink bg-paper p-4"
                 >
-                  <.cover_thumb entry={entry} />
+                  <.document_thumb document={doc} pds_host={@pds_host} did={@current_scope.user.did} />
 
                   <div class="min-w-0 flex-1">
                     <.link
@@ -133,6 +135,16 @@ defmodule AnnotAtWeb.PostsLive do
                       class={["size-4", publishing?(@publishing, entry) && "animate-spin"]}
                     />
                     {if publishing?(@publishing, entry), do: "Re-publishing…", else: "Re-publish"}
+                  </.button>
+                  <.button
+                    id={"remove-#{entry.rkey}"}
+                    aria-label="Remove"
+                    variant="ghost"
+                    size="sm"
+                    phx-value-rkey={entry.rkey}
+                    phx-click={JS.push("select_post") |> show_modal("delete-modal")}
+                  >
+                    <.icon name="hero-trash" class="size-4" />
                   </.button>
                 </div>
               </div>
@@ -185,11 +197,12 @@ defmodule AnnotAtWeb.PostsLive do
               <p :if={outside == []} class="mt-6 text-ink/55">
                 Every published document is in the current feed.
               </p>
-              <div class="mt-6 space-y-2">
+              <div class="mt-6 space-y-3">
                 <div
                   :for={doc <- outside}
                   class="flex items-center gap-4 rounded-2xl border-2 border-ink bg-paper p-4"
                 >
+                  <.document_thumb document={doc} pds_host={@pds_host} did={@current_scope.user.did} />
                   <div class="min-w-0 flex-1">
                     <.link
                       navigate={~p"/sites/#{@site.id}/posts/#{doc.rkey}"}
@@ -197,13 +210,34 @@ defmodule AnnotAtWeb.PostsLive do
                     >
                       {doc.title}
                     </.link>
+                    <div
+                      :if={doc.description}
+                      class="mt-0.5 truncate text-sm
+                    text-ink/50"
+                    >
+                      {doc.description}
+                    </div>
                     <div class="mt-1 flex items-center gap-2 text-xs text-ink/45">
+                      <span class="flex items-center gap-1">
+                        <.icon name="hero-check" class="size-3.5" /> Published
+                      </span>
                       <span class="truncate text-ink/40">{doc.rkey}</span>
                       <span :if={doc.published_at}>
                         {Calendar.strftime(doc.published_at, "%b %d, %Y")}
                       </span>
                     </div>
                   </div>
+
+                  <.button
+                    id={"remove-#{doc.rkey}"}
+                    aria-label="Remove"
+                    variant="ghost"
+                    size="sm"
+                    phx-value-rkey={doc.rkey}
+                    phx-click={JS.push("select_post") |> show_modal("delete-modal")}
+                  >
+                    <.icon name="hero-trash" class="size-4" />
+                  </.button>
                 </div>
               </div>
             <% :setup -> %>
@@ -318,6 +352,18 @@ defmodule AnnotAtWeb.PostsLive do
             This writes a <span class="font-mono text-xs">site.standard.document</span>
             record for every unpublished post in your feed, making each publicly discoverable. You can re-publish to update them later.
           </.confirm_modal>
+
+          <.confirm_modal
+            id="delete-modal"
+            title="Remove this post"
+            confirm="delete_post"
+            cta="Remove"
+          >
+            This deletes the <span class="font-mono
+           text-xs">site.standard.document</span>
+            record from your atproto repo. The blog post itself is untouched, and you can
+            re-publish it later under the same record key.
+          </.confirm_modal>
         </.async_result>
       </.async_result>
     </Layouts.dashboard>
@@ -328,6 +374,12 @@ defmodule AnnotAtWeb.PostsLive do
   def mount(%{"id" => id}, _session, socket) do
     site = Publishing.get_site!(socket.assigns.current_scope, id)
     posts = Map.new(Publishing.list_posts(site), &{&1.rkey, &1})
+    user = socket.assigns.current_scope.user
+
+    pds_host =
+      if session = Accounts.get_atproto_session(user.did) do
+        session.pds_host
+      end
 
     socket =
       socket
@@ -337,7 +389,8 @@ defmodule AnnotAtWeb.PostsLive do
         posts: posts,
         publishing_all?: false,
         selected_rkey: nil,
-        publishing: MapSet.new()
+        publishing: MapSet.new(),
+        pds_host: pds_host
       )
       |> load_feed(site)
       |> load_documents(site)
@@ -399,6 +452,12 @@ defmodule AnnotAtWeb.PostsLive do
 
       {:noreply, socket}
     end
+  end
+
+  def handle_event("delete_post", _params, socket) do
+    %{selected_rkey: rkey, site: site, current_scope: scope} = socket.assigns
+
+    {:noreply, start_async(socket, {:delete, rkey}, fn -> delete_document(scope, site, rkey) end)}
   end
 
   @impl Phoenix.LiveView
@@ -465,6 +524,21 @@ defmodule AnnotAtWeb.PostsLive do
   def handle_async(:load_documents, {:ok, reason}, socket) do
     Logger.warning("PostsLive: failed to load documents", reason: inspect(reason))
     {:noreply, assign(socket, documents: AsyncResult.failed(socket.assigns.documents, reason))}
+  end
+
+  def handle_async({:delete, rkey}, {:ok, :ok}, socket) do
+    socket =
+      socket
+      |> assign(posts: Map.delete(socket.assigns.posts, rkey))
+      |> update_documents(fn documents -> Enum.reject(documents, &(&1.rkey == rkey)) end)
+
+    {:noreply, socket}
+  end
+
+  def handle_async({:delete, rkey}, result, socket) do
+    Logger.warning("PostsLive: delete failed", reason: inspect(result), rkey: rkey)
+
+    {:noreply, put_flash(socket, :error, "Couldn't remove, try again.")}
   end
 
   defp load_feed(socket, site) do
@@ -535,6 +609,19 @@ defmodule AnnotAtWeb.PostsLive do
     end
   end
 
+  defp delete_document(scope, site, rkey) do
+    case StandardSite.delete_document(scope.user.id, rkey) do
+      {:ok, _} ->
+        Publishing.untrack_post(site, rkey)
+
+      {:error, %Latch.Error.XRPC{body: %{"error" => "RecordNotFound"}}} ->
+        Publishing.untrack_post(site, rkey)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp publish_all(scope, site, entries) do
     Enum.reduce(entries, {[], %{}}, fn entry, {documents, posts} ->
       case create_document(scope, site, entry) do
@@ -545,19 +632,26 @@ defmodule AnnotAtWeb.PostsLive do
   end
 
   defp partition(entries, documents) do
-    document_rkeys = MapSet.new(documents, & &1.rkey)
+    documents_by_rkey = Map.new(documents, &{&1.rkey, &1})
 
     groups =
       Enum.group_by(entries, fn entry ->
         cond do
           is_nil(entry.rkey) -> :setup
-          MapSet.member?(document_rkeys, entry.rkey) -> :published
+          Map.has_key?(documents_by_rkey, entry.rkey) -> :published
           true -> :unpublished
         end
       end)
 
+    published = Map.get(groups, :published, [])
+
+    published_documents =
+      Enum.map(published, fn entry ->
+        {entry, Map.fetch!(documents_by_rkey, entry.rkey)}
+      end)
+
     %{
-      published: Map.get(groups, :published, []),
+      published: published_documents,
       unpublished: Map.get(groups, :unpublished, []),
       setup: Map.get(groups, :setup, [])
     }
@@ -683,4 +777,34 @@ defmodule AnnotAtWeb.PostsLive do
     </div>
     """
   end
+
+  attr :document, :map, required: true
+  attr :pds_host, :string, default: nil
+  attr :did, :string, required: true
+
+  defp document_thumb(assigns) do
+    ~H"""
+    <img
+      :if={document_cover_url(@pds_host, @did, @document)}
+      src={document_cover_url(@pds_host, @did, @document)}
+      alt=""
+      class="aspect-[1.91/1] w-24 shrink-0 rounded-lg border-2 border-ink/15
+    object-cover"
+    />
+    <div
+      :if={is_nil(document_cover_url(@pds_host, @did, @document))}
+      class="flex aspect-[1.91/1] w-24 shrink-0 items-center justify-center rounded-lg
+    border-2 border-dashed border-ink/10 text-ink/20"
+    >
+      <.icon name="hero-photo" class="size-5" />
+    </div>
+    """
+  end
+
+  defp document_cover_url(pds_host, did, %Document{cover_image: %{} = blob})
+       when is_binary(pds_host) do
+    Atproto.blob_url(pds_host, did, blob)
+  end
+
+  defp document_cover_url(_pds_host, _did, _document), do: nil
 end

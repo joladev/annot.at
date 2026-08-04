@@ -3,6 +3,7 @@ defmodule AnnotAtWeb.PostLive do
 
   import AnnotAtWeb.DocumentComponents
 
+  alias AnnotAt.Accounts
   alias AnnotAt.Atproto
   alias AnnotAt.Atproto.StandardSite
   alias AnnotAt.Atproto.StandardSite.Document
@@ -53,7 +54,9 @@ defmodule AnnotAtWeb.PostLive do
   end
 
   defp cover_url(user, %Document{cover_image: %{} = blob}) do
-    Atproto.blob_url(user.pds_host, user.did, blob)
+    if session = Accounts.get_atproto_session(user.did) do
+      Atproto.blob_url(session.pds_host, user.did, blob)
+    end
   end
 
   defp cover_url(_user, _doc), do: nil

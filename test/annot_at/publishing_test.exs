@@ -134,4 +134,15 @@ defmodule AnnotAt.PublishingTest do
       assert [%Post{content_hash: "bbb"}] = Publishing.list_posts(site)
     end
   end
+
+  describe "untrack_post/2" do
+    test "forgets the tracked rkey", %{scope: scope} do
+      {:ok, site} = Publishing.create_site(scope, "https://example.com")
+
+      assert {:ok, _} = Publishing.track_post(site, %{rkey: "3mope", content_hash: "aaa"})
+      assert :ok = Publishing.untrack_post(site, "3mope")
+
+      assert [] = Publishing.list_posts(site)
+    end
+  end
 end

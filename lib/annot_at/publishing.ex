@@ -103,6 +103,11 @@ defmodule AnnotAt.Publishing do
     )
   end
 
+  def untrack_post(%Site{id: site_id}, rkey) do
+    Repo.delete_all(from p in Post, where: p.site_id == ^site_id and p.rkey == ^rkey)
+    :ok
+  end
+
   defp verify_user_ownership!(%Site{user_id: user_id}, user_id), do: :ok
   defp verify_user_ownership!(%Site{}, _user_id), do: raise(Ecto.NoResultsError, queryable: Site)
 end
