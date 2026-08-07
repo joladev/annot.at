@@ -6,6 +6,7 @@ defmodule AnnotAt.Feeds do
 
   alias AnnotAt.Feeds.Atom
   alias AnnotAt.Feeds.Feed
+  alias AnnotAt.Feeds.JSON
   alias AnnotAt.Feeds.RSS
   alias AnnotAt.Feeds.Source
 
@@ -29,7 +30,7 @@ defmodule AnnotAt.Feeds do
     case detect(body, content_type) do
       :rss -> RSS.parse(body)
       :atom -> Atom.parse(body)
-      :json -> {:error, :unsupported_feed}
+      :json -> JSON.parse(body)
       :unknown -> {:error, :unrecognized_feed}
     end
   end

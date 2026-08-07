@@ -1,0 +1,28 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "example.com",
+  "home_page_url": "https://example.com/",
+  "feed_url": "https://example.com/feed.json",
+  "description": "Thoughts about things.",
+  "items": [
+    {
+      "id": "https://example.com/blog-post/",
+      "url": "https://example.com/blog-post/",
+      "title": "Blog post",
+      "content_text": "Lorem ipsum dolor sit amet.",
+      "date_published": "2026-08-04T00:00:00Z",
+      "tags": ["category-1", "category-2"],
+      "image": "https://example.com/images/image.png"
+    },
+    {
+      "id": "https://example.com/more-content/",
+      "url": "https://example.com/more-content/",
+      "title": "More content",
+      "content_text": "Not preferred",
+      "content_html": "<p>preferred</p>",
+      "date_published": "2026-07-31T00:00:00Z",
+      "date_modified":  "2026-07-31T00:00:00Z",
+      "summary": "summary"
+    }
+  ]
+}
