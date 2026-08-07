@@ -76,4 +76,7 @@ if config_env() == :prod do
         {Cloak.Ciphers.AES.GCM,
          tag: "AES.GCM.V1", key: Base.decode64!(System.fetch_env!("CLOAK_KEY"))}
     ]
+
+  config :sentry,
+    dsn: System.get_env("SENTRY_DSN")
 end

@@ -54,6 +54,7 @@ COPY lib lib
 
 # Compile the release
 RUN mix compile
+RUN mix sentry.package_source_code
 
 COPY assets assets
 
