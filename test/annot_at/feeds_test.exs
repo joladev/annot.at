@@ -28,16 +28,31 @@ defmodule AnnotAt.FeedsTest do
       href="https://blog.example.com/atom">
         <link rel="alternate" type="application/feed+json" title="JSON"
       href="/feed.json">
+        <link rel="feed" type="application/feed+json" title="Legacy"
+      href="/legacy.json">
       </head></html>
       """
 
-      assert [main, atom, json] = Feeds.discover(html, "https://blog.example.com")
+      assert [main, atom, json, feed] = Feeds.discover(html, "https://blog.example.com")
 
       assert %Feeds.Source{url: "https://blog.example.com/feed.xml", title: "Main", format: :rss} =
                main
 
       assert %Feeds.Source{url: "https://blog.example.com/atom", title: nil, format: :atom} = atom
       assert %Feeds.Source{format: :json, title: "JSON"} = json
+      # rel=feed
+      assert %Feeds.Source{format: :json, title: "Legacy"} = feed
+    end
+
+    test "matches feed links whose type has parameters" do
+      html = """
+      <html><head>
+        <link rel="alternate" type="application/rss+xml; charset=utf-8" href="/feed.xml">
+      </head></html>
+      """
+
+      assert [%Feeds.Source{format: :rss, url: "https://blog.example.com/feed.xml"}] =
+               Feeds.discover(html, "https://blog.example.com")
     end
 
     test "ignores non-feed alternates and dedupes by url" do

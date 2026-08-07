@@ -13,14 +13,17 @@ defmodule AnnotAt.Feeds do
   @feed_formats %{
     "application/rss+xml" => :rss,
     "application/atom+xml" => :atom,
-    "application/feed+json" => :json
+    "application/feed+json" => :json,
+    "text/rss+xml" => :rss,
+    "application/xml" => :unknown,
+    "text/xml" => :unknown
   }
 
   @feed_rels ~w(alternate feed)
 
   @feed_mappings for rel <- @feed_rels,
                      type <- Map.keys(@feed_formats),
-                     do: ~s(link[rel="#{rel}"][type="#{type}"])
+                     do: ~s(link[rel="#{rel}"][type^="#{type}"])
 
   @feed_selector Enum.join(@feed_mappings, ", ")
 
@@ -103,16 +106,22 @@ defmodule AnnotAt.Feeds do
 
     case attributes do
       %{"href" => href, "type" => type} ->
-        url =
-          base_url
-          |> URI.merge(href)
-          |> URI.to_string()
+        case Map.fetch(@feed_formats, normalize_type(type)) do
+          {:ok, format} ->
+            url =
+              base_url
+              |> URI.merge(href)
+              |> URI.to_string()
 
-        %Source{
-          url: url,
-          title: attributes["title"],
-          format: Map.fetch!(@feed_formats, type)
-        }
+            %Source{
+              url: url,
+              title: attributes["title"],
+              format: format
+            }
+
+          _ ->
+            nil
+        end
 
       _ ->
         nil
@@ -156,5 +165,10 @@ defmodule AnnotAt.Feeds do
       "" -> nil
       trimmed -> trimmed
     end
+  end
+
+  defp normalize_type(type) do
+    [first | _] = String.split(type, ";")
+    String.trim(first)
   end
 end
