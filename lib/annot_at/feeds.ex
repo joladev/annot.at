@@ -16,9 +16,13 @@ defmodule AnnotAt.Feeds do
     "application/feed+json" => :json
   }
 
-  @feed_selector Enum.map_join(Map.keys(@feed_formats), ", ", fn type ->
-                   ~s(link[rel="alternate"][type="#{type}"])
-                 end)
+  @feed_rels ~w(alternate feed)
+
+  @feed_mappings for rel <- @feed_rels,
+                     type <- Map.keys(@feed_formats),
+                     do: ~s(link[rel="#{rel}"][type="#{type}"])
+
+  @feed_selector Enum.join(@feed_mappings, ", ")
 
   @doc """
   Parses a feed body into a `Feed`, detecting the format from body and
