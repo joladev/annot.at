@@ -27,7 +27,9 @@ annot.at will use information from your blog to publish your documents. From the
 - [x] Add site including verification
 - [x] Document cover images
 - [x] Document content with html content type
+- [ ] Maintain local index + read jetstream
 - [ ] Support multiple publications on the same site
+- [ ] Define "Sync" semantics to replace "Publish all"
 - [ ] RSS poller
 - [ ] standard.site document reader
 - [ ] Post to Bluesky

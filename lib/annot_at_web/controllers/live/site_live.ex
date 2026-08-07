@@ -80,8 +80,7 @@ defmodule AnnotAtWeb.SiteLive do
         <div class="absolute inset-0 bg-ink/50" phx-click="close_publish" />
         <div class="relative w-full max-w-lg rounded-2xl border-2 border-ink
        bg-paper p-6 shadow-[8px_8px_0px_0px_var(--color-ink)]">
-          <h2 class="font-display text-2xl font-bold tracking-tight">Publish to
-            the ATmosphere</h2>
+          <h2 class="font-display text-2xl font-bold tracking-tight">Publish to the ATmosphere</h2>
           <p class="mt-2 text-sm text-ink/70">
             This writes a public <span class="font-mono text-xs">site.standard.publication</span>
             record into your atproto repo, making your blog discoverable to any
@@ -334,6 +333,34 @@ defmodule AnnotAtWeb.SiteLive do
     }
   end
 
+  defp feed_error_message(error) do
+    case error do
+      {:error, {:http_status, status}} ->
+        "The site responded with status code: #{status}."
+
+      {:error, {:transport, %{reason: :nxdomain}}} ->
+        "Unable to resolve domain name."
+
+      {:error, {:transport, %{reason: :econnrefused}}} ->
+        "Unable to connect to site."
+
+      {:error, {:transport, %{reason: :timeout}}} ->
+        "Request timed out."
+
+      {:error, {:transport, %{reason: :closed}}} ->
+        "Server closed the connection."
+
+      {:error, {:transport, %{reason: {:tls_alert, _}}}} ->
+        "TLS handshake failed."
+
+      {:error, {:transport, %Req.TooManyRedirectsError{}}} ->
+        "Fetching site failed due to redirect loop."
+
+      _ ->
+        "Unable to find a feed."
+    end
+  end
+
   attr :feeds, :any, required: true
 
   defp feed_step(assigns) do
@@ -359,13 +386,23 @@ defmodule AnnotAtWeb.SiteLive do
             <.icon name="hero-arrow-path" class="size-5 animate-spin" /> Looking…
           </div>
         </:loading>
-        <:failed :let={_}>
-          <p class="mt-6 text-sm font-bold text-red-600">Couldn't reach the
-            site.</p>
+        <:failed :let={error}>
+          <p class="mt-6 text-sm font-bold text-red-600">
+            {feed_error_message(error)}
+          </p>
         </:failed>
 
-        <p :if={feeds == []} class="mt-6 text-sm text-ink/60">No feed found on
-          this site.</p>
+        <div :if={feeds == []}>
+          <p class="mt-6 text-sm text-ink/60">
+            No feed found on this site. We look for tags like
+          </p>
+
+          <pre class="mt-6"><code>{~s|<link rel="alternate" href="/rss.xml" />|}</code></pre>
+
+          <p class="mt-6 text-sm text-ink/60">
+            in the <code class="text-sm text-ink">{~s|<head>|}</code> of the page.
+          </p>
+        </div>
 
         <div :if={feeds != []} class="mt-6 grid gap-3 sm:grid-cols-2">
           <button
