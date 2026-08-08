@@ -164,10 +164,10 @@ whitespace" do
       assert :ok = StandardSite.verify_ownership(@url, @at_uri)
     end
 
-    test "fetches the well-known at the domain root even when the url has a
+    test "fetches the well-known at the publication's path when the url has a
 path" do
       expect(HTTP, :get_text, fn
-        "https://example.com/.well-known/site.standard.publication" ->
+        "https://example.com/.well-known/site.standard.publication/blog" ->
           {:ok, @at_uri}
       end)
 

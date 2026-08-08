@@ -18,18 +18,21 @@ defmodule AnnotAtWeb.SiteNewLive do
 
       <%= if @matches == [] do %>
         <div class="mt-6 rounded-3xl border-2 border-ink bg-sky-light p-8
-    shadow-[10px_10px_0px_0px_var(--color-sky-bold)] sm:p-12">
+                    shadow-[10px_10px_0px_0px_var(--color-sky-bold)] sm:p-12">
           <div class="flex items-center gap-4">
             <div class="grid size-16 flex-none -rotate-3 place-items-center
-    rounded-2xl border-2 border-ink bg-peach-bold
-    shadow-[4px_4px_0px_0px_var(--color-ink)]">
+                        rounded-2xl border-2 border-ink bg-peach-bold
+                        shadow-[4px_4px_0px_0px_var(--color-ink)]">
               <.icon name="hero-rss" class="size-8" />
             </div>
             <div>
-              <h1 class="font-display text-4xl font-bold tracking-tight">Add a
-                site</h1>
-              <p class="mt-1 text-ink/60">Paste your blog's URL, we'll sniff out
-                its feed.</p>
+              <h1 class="font-display text-4xl font-bold tracking-tight">Add a site</h1>
+              <p class="mt-1 text-ink/60">
+                Paste your blog's URL, we'll look for feeds. The same URL will be used for your standard.site publication if you don't have one.
+              </p>
+              <p class="mt-1 text-sm text-ink/30">
+                If your publication lives on a sub-path, please use that URL, eg https://example.com/alice-blog. Otherwise point at the root, like https://example.com.
+              </p>
             </div>
           </div>
 
@@ -38,12 +41,16 @@ defmodule AnnotAtWeb.SiteNewLive do
               <div class="flex-1">
                 <.input
                   field={@form[:url]}
-                  type="url"
+                  type="text"
+                  inputmode="url"
+                  autocapitalize="none"
+                  autocorrect="off"
+                  spellcheck="false"
                   label="Website URL"
-                  placeholder="https://yourblog.com"
+                  placeholder="yourblog.com"
                   class="w-full rounded-xl border-2 border-ink bg-paper px-5
-    py-4 text-lg font-medium placeholder:text-ink/30 focus:outline-none focus:ring-2
-    focus:ring-sky-bold"
+                        py-4 text-lg font-medium placeholder:text-ink/30 focus:outline-none focus:ring-2
+                        focus:ring-sky-bold"
                 />
               </div>
               <button
@@ -51,13 +58,13 @@ defmodule AnnotAtWeb.SiteNewLive do
                 disabled={!@valid?}
                 class={[
                   "w-full rounded-xl border-2 border-ink bg-ink px-6 py-4
-    text-lg font-bold text-paper transition-all whitespace-nowrap sm:mb-3
-    sm:w-auto",
+                  text-lg font-bold text-paper transition-all whitespace-nowrap sm:mb-3
+                  sm:w-auto",
                   @valid? &&
                     "cursor-pointer
-    shadow-[4px_4px_0px_0px_var(--color-peach-bold)] hover:-translate-y-0.5
-    hover:shadow-[6px_6px_0px_0px_var(--color-peach-bold)] active:translate-y-0
-    active:shadow-[2px_2px_0px_0px_var(--color-peach-bold)]",
+                    shadow-[4px_4px_0px_0px_var(--color-peach-bold)] hover:-translate-y-0.5
+                    hover:shadow-[6px_6px_0px_0px_var(--color-peach-bold)] active:translate-y-0
+                    active:shadow-[2px_2px_0px_0px_var(--color-peach-bold)]",
                   !@valid? && "cursor-not-allowed opacity-40"
                 ]}
               >
@@ -69,10 +76,8 @@ defmodule AnnotAtWeb.SiteNewLive do
       <% else %>
         <div class="mt-6 rounded-3xl border-2 border-ink bg-sky-light p-8
     shadow-[10px_10px_0px_0px_var(--color-sky-bold)] sm:p-10">
-          <h1 class="font-display text-3xl font-bold tracking-tight">You've
-            added this before</h1>
-          <p class="mt-1 text-ink/60">Continue an existing site for {@url}, or
-            start a fresh one.</p>
+          <h1 class="font-display text-3xl font-bold tracking-tight">You've added this before</h1>
+          <p class="mt-1 text-ink/60">Continue an existing site for {@url}, or start a fresh one.</p>
 
           <div class="mt-6 space-y-3">
             <.site_row :for={site <- @matches} site={site} />
@@ -80,14 +85,13 @@ defmodule AnnotAtWeb.SiteNewLive do
             <button
               phx-click="create_new"
               class="flex w-full cursor-pointer items-center gap-3 rounded-2xl
-    border-2 border-dashed border-ink bg-paper p-5 text-left transition-all
-    hover:-translate-y-0.5 active:translate-y-0"
+                     border-2 border-dashed border-ink bg-paper p-5 text-left transition-all
+                     hover:-translate-y-0.5 active:translate-y-0"
             >
               <.icon name="hero-plus-circle" class="size-6 flex-none" />
               <div>
                 <div class="font-bold">Start a new one</div>
-                <div class="text-xs text-ink/55">Register {@url} again as a
-                  separate site.</div>
+                <div class="text-xs text-ink/55">Register {@url} again as a separate site.</div>
               </div>
             </button>
           </div>

@@ -171,6 +171,22 @@ defmodule AnnotAt.Atproto.StandardSite do
     end
   end
 
+  def wellknown_path(%URI{} = url), do: do_wellknown_path(url)
+
+  def wellknown_path(url) when is_binary(url) do
+    uri = URI.parse(url)
+
+    do_wellknown_path(uri)
+  end
+
+  defp do_wellknown_path(uri) do
+    if uri.path in [nil, "/"] do
+      @wellknown_path
+    else
+      @wellknown_path <> uri.path
+    end
+  end
+
   defp fetch_user(user_id) do
     case Accounts.get_user(user_id) do
       nil -> {:error, :no_session}
@@ -225,7 +241,7 @@ defmodule AnnotAt.Atproto.StandardSite do
 
     URI.to_string(%{
       uri
-      | path: @wellknown_path,
+      | path: wellknown_path(uri),
         query: nil,
         fragment: nil
     })

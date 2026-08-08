@@ -21,9 +21,7 @@ defmodule AnnotAtWeb.ImportLive do
       </.link>
       <h1 class="mt-4 font-display text-3xl font-bold tracking-tight">Import publication</h1>
       <p class="mt-1 text-ink/60">
-        This publication already lives in your repo. Pick the feed to read posts from,
-        and
-        it's set up.
+        This publication already lives in your repo. Pick the feed to read posts from, and it's set up.
       </p>
 
       <.async_result :let={check} assign={@check}>
@@ -66,7 +64,7 @@ defmodule AnnotAtWeb.ImportLive do
             </:failed>
 
             <p :if={feeds == []} class="mt-6 max-w-prose text-sm text-ink/60">
-              No feeds found on this site. annot.at reads your posts from an RSS or Atom feed — add one to your blog and make sure it's linked from your homepage, then <.link
+              No feeds found on this site. annot.at reads your posts from an RSS or Atom feed. Add one to your blog and make sure it's linked from your homepage, then <.link
                 href={~p"/sites/import/#{@rkey}"}
                 class="font-bold underline hover:text-ink"
               >
@@ -98,14 +96,13 @@ defmodule AnnotAtWeb.ImportLive do
         <% else %>
           <div class="mt-6 space-y-4">
             <p class="text-sm text-ink/70">
-              This publication isn't verified yet. Host this file on your site, then
-              check again:
+              This publication isn't verified yet. Host this file on your site, then check again:
             </p>
             <div class="rounded-xl border-2 border-ink bg-sky-light p-4">
               <div class="text-xs font-bold uppercase tracking-wide
     text-ink/55">Path</div>
               <code class="mt-1 block break-all text-sm font-medium">
-                /.well-known/site.standard.publication
+                {check.wellknown_path}
               </code>
               <div class="mt-3 text-xs font-bold uppercase tracking-wide
     text-ink/55">Contents</div>
@@ -199,7 +196,8 @@ defmodule AnnotAtWeb.ImportLive do
       {:ok, pub} ->
         at_uri = StandardSite.publication_uri(user.did, rkey)
         verified? = StandardSite.verify_ownership(pub["url"], at_uri) == :ok
-        %{pub: pub, at_uri: at_uri, verified?: verified?}
+        wellknown_path = StandardSite.wellknown_path(pub["url"])
+        %{pub: pub, at_uri: at_uri, verified?: verified?, wellknown_path: wellknown_path}
 
       {:error, reason} ->
         {:error, reason}
