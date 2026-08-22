@@ -9,10 +9,10 @@ defmodule AnnotAt.Publishing do
 
   alias AnnotAt.Accounts.Scope
   alias AnnotAt.Accounts.User
-  alias AnnotAt.Atproto.TID
   alias AnnotAt.Publishing.Post
   alias AnnotAt.Publishing.Site
   alias AnnotAt.Repo
+  alias Latch.TID
 
   @spec list_sites(Scope.t()) :: [Site.t()]
   def list_sites(%Scope{user: %User{id: user_id}}) do

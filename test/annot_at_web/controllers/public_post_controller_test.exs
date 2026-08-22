@@ -2,9 +2,9 @@ defmodule AnnotAtWeb.PublicPostControllerTest do
   use AnnotAtWeb.ConnCase, async: true
   use Mimic
 
-  alias AnnotAt.Atproto.DIDDocument
   alias AnnotAt.Atproto.StandardSite
   alias AnnotAt.Atproto.StandardSite.Document
+  alias Latch.DIDDocument
 
   @did "did:plc:ewvi7nxzyoun6zhxrhs64oiz"
   @rkey "3mlhhbujc22gw"
