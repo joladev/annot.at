@@ -11,14 +11,9 @@ defmodule AnnotAtWeb.AuthControllerTest do
     conn = get(conn, ~p"/oauth-client-metadata.json")
     metadata = json_response(conn, 200)
 
-    assert "http://localhost:4002/oauth-client-metadata.json" == metadata["client_id"]
     assert ["http://localhost:4002/auth/callback"] == metadata["redirect_uris"]
     assert metadata["scope"] =~ "atproto"
     assert true == metadata["dpop_bound_access_tokens"]
-    assert "private_key_jwt" == metadata["token_endpoint_auth_method"]
-
-    assert [key] = metadata["jwks"]["keys"]
-    refute Map.has_key?(key, "d")
   end
 
   test "GET /auth/callback logs in and redirects dashboard", %{conn: conn} do

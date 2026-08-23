@@ -6,7 +6,6 @@ defmodule AnnotAt.Atproto.StandardSite do
 
   alias AnnotAt.Accounts
   alias AnnotAt.Atproto.HTTP
-  alias AnnotAt.Atproto.Identity
   alias AnnotAt.Atproto.StandardSite.Document
   alias AnnotAt.Atproto.StandardSite.Publication
 
@@ -164,7 +163,7 @@ defmodule AnnotAt.Atproto.StandardSite do
   def get_public_publication(_site), do: {:error, :no_publication}
 
   def get_public_record(did, collection, rkey) do
-    with {:ok, did_doc} <- Identity.resolve_did(did),
+    with {:ok, did_doc} <- Latch.resolve_did(Latch.Shelf, did),
          url = record_url(did_doc.pds_endpoint, did, collection, rkey),
          {:ok, %{"value" => value}} <- HTTP.get_json(url) do
       {:ok, value, did_doc}

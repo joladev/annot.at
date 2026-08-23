@@ -4,13 +4,12 @@ defmodule AnnotAtWeb.PublicPostControllerTest do
 
   alias AnnotAt.Atproto.StandardSite
   alias AnnotAt.Atproto.StandardSite.Document
-  alias Latch.DIDDocument
 
   @did "did:plc:ewvi7nxzyoun6zhxrhs64oiz"
   @rkey "3mlhhbujc22gw"
 
   test "GET /p/:did/rkey renders the document", %{conn: conn} do
-    did_doc = %DIDDocument{did: @did, handle: "jola.dev", pds_endpoint: "https://pds.example"}
+    did_doc = %{did: @did, handle: "jola.dev", pds_endpoint: "https://pds.example"}
 
     doc = %Document{
       rkey: @rkey,

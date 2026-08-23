@@ -63,9 +63,8 @@ config :phoenix, :json_library, Jason
 config :annot_at, AnnotAt.Latch,
   name: AnnotAt.Latch,
   store: AnnotAt.LatchStore,
-  mode: :confidential,
+  mode: :localhost,
   client_name: "annot.at",
-  client_id_path: "/oauth-client-metadata.json",
   redirect_uri_path: "/auth/callback",
   base_url_fun: &AnnotAtWeb.Endpoint.url/0,
   scope:
@@ -78,9 +77,7 @@ config :annot_at, AnnotAt.Latch,
         "blob:image/*"
       ],
       " "
-    ),
-  signing_key:
-    ~s({"crv":"P-256","d":"h0MvqcXLcKqWZFnqUCAuc6Bmt6gGzj5F5sFOCaUD4Jw","kty":"EC","x":"u0_K5EPDBIlGVp_rUUKucDviS-Owhiv4jnpMCeI7ojY","y":"v_XGrdUIww1wsRA7TUqMWIAJXmi2V8mnoF24Vg5OkvQ"})
+    )
 
 config :annot_at, AnnotAt.Vault,
   ciphers: [

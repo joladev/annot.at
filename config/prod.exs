@@ -30,3 +30,10 @@ config :logger, level: :info
 
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
+#
+config :annot_at, AnnotAt.Latch,
+  mode: :confidential,
+  client_name: "annot.at",
+  client_id_path: "/oauth-client-metadata.json",
+  redirect_uri_path: "/auth/callback",
+  base_url_fun: &AnnotAtWeb.Endpoint.url/0
