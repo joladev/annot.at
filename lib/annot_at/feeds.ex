@@ -34,6 +34,11 @@ defmodule AnnotAt.Feeds do
   @spec parse(binary(), String.t() | nil) ::
           {:ok, Feed.t()} | {:error, :invalid_feed | :unsupported_feed | :unrecognized_feed}
   def parse(body, content_type \\ nil) when is_binary(body) do
+    body =
+      body
+      |> strip_bom()
+      |> String.trim_leading()
+
     case detect(body, content_type) do
       :rss -> RSS.parse(body)
       :atom -> Atom.parse(body)
@@ -129,10 +134,7 @@ defmodule AnnotAt.Feeds do
   end
 
   defp detect(body, content_type) do
-    head =
-      body
-      |> String.slice(0..1023)
-      |> String.trim_leading()
+    head = String.slice(body, 0..1023)
 
     cond do
       String.starts_with?(head, "{") -> :json
@@ -171,4 +173,7 @@ defmodule AnnotAt.Feeds do
     [first | _] = String.split(type, ";")
     String.trim(first)
   end
+
+  defp strip_bom(<<0xEF, 0xBB, 0xBF, rest::binary>>), do: rest
+  defp strip_bom(body), do: body
 end
