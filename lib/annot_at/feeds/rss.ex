@@ -144,7 +144,7 @@ defmodule AnnotAt.Feeds.RSS do
   defp parse_date(nil), do: nil
 
   defp parse_date(text) do
-    case DateTimeParser.parse_datetime(text) do
+    case DateTimeParser.parse_datetime(text, to_utc: true, assume_utc: true) do
       {:ok, datetime} ->
         datetime
 

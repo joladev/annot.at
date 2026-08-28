@@ -178,8 +178,8 @@ defmodule AnnotAt.Feeds.Atom do
   defp parse_date(nil), do: nil
 
   defp parse_date(text) do
-    case DateTimeParser.parse_datetime(text) do
-      {:ok, datetime} ->
+    case DateTime.from_iso8601(text) do
+      {:ok, datetime, _offset} ->
         datetime
 
       {:error, reason} ->

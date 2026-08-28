@@ -76,7 +76,8 @@ defmodule AnnotAt.MixProject do
       {:html_sanitize_ex, "~> 1.4"},
       {:latch, "~> 0.5"},
       {:sentry, "~> 13.4"},
-      {:logger_json, "~> 7.0"}
+      {:logger_json, "~> 7.0"},
+      {:tz, "~> 0.28"}
     ]
   end
 
