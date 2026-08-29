@@ -517,11 +517,21 @@ defmodule AnnotAtWeb.PostsLive do
     {:noreply, assign(socket, feed: AsyncResult.failed(socket.assigns.feed, reason))}
   end
 
+  def handle_async(:load_feed, {:exit, reason}, socket) do
+    Logger.warning("PostsLive: failed to load feed", reason: inspect(reason))
+    {:noreply, assign(socket, feed: AsyncResult.failed(socket.assigns.feed, reason))}
+  end
+
   def handle_async(:load_documents, {:ok, {:ok, documents}}, socket) do
     {:noreply, assign(socket, documents: AsyncResult.ok(socket.assigns.documents, documents))}
   end
 
   def handle_async(:load_documents, {:ok, reason}, socket) do
+    Logger.warning("PostsLive: failed to load documents", reason: inspect(reason))
+    {:noreply, assign(socket, documents: AsyncResult.failed(socket.assigns.documents, reason))}
+  end
+
+  def handle_async(:load_documents, {:exit, reason}, socket) do
     Logger.warning("PostsLive: failed to load documents", reason: inspect(reason))
     {:noreply, assign(socket, documents: AsyncResult.failed(socket.assigns.documents, reason))}
   end

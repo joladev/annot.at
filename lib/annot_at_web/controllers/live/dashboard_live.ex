@@ -196,7 +196,20 @@ defmodule AnnotAtWeb.DashboardLive do
      )}
   end
 
-  def handle_async(:load_publications, {:ok, {:error, reason}}, socket) do
+  def handle_async(:load_publications, {:ok, reason}, socket) do
+    Logger.warning("SitesLive: failed to load publications", reason: inspect(reason))
+
+    {:noreply,
+     assign(socket,
+       publications:
+         AsyncResult.failed(
+           socket.assigns.publications,
+           reason
+         )
+     )}
+  end
+
+  def handle_async(:load_publications, {:exit, reason}, socket) do
     Logger.warning("SitesLive: failed to load publications", reason: inspect(reason))
 
     {:noreply,
