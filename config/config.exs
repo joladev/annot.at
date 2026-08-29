@@ -92,7 +92,8 @@ config :annot_at,
 config :sentry,
   environment_name: Mix.env(),
   enable_source_code_context: true,
-  root_source_code_paths: [File.cwd!()]
+  root_source_code_paths: [File.cwd!()],
+  client: Sentry.FinchClient
 
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
