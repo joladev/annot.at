@@ -579,7 +579,7 @@ defmodule AnnotAtWeb.PostsLive do
       rkey: entry.rkey,
       site: StandardSite.publication_uri(user.did, site.rkey),
       title: entry.title,
-      path: path_of(entry.url),
+      path: Document.path_of(entry.url, site.url),
       published_at: entry.published_at,
       description: entry.summary,
       text_content: text_content_of(entry.content),
@@ -587,9 +587,6 @@ defmodule AnnotAtWeb.PostsLive do
       tags: entry.categories
     }
   end
-
-  defp path_of(nil), do: nil
-  defp path_of(url), do: URI.parse(url).path
 
   defp text_content_of(nil), do: nil
 

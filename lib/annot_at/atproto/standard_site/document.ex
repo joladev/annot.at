@@ -1,6 +1,8 @@
 defmodule AnnotAt.Atproto.StandardSite.Document do
   @moduledoc "A `site.standard.document` record (a published post)."
 
+  alias AnnotAt.URL
+
   @enforce_keys [:rkey, :site, :title, :published_at]
   defstruct [
     :rkey,
@@ -56,6 +58,18 @@ defmodule AnnotAt.Atproto.StandardSite.Document do
       _ ->
         {:error, :invalid}
     end
+  end
+
+  def path_of(nil, _site), do: nil
+
+  def path_of(url, site_url) do
+    canonical_url = URL.canonical(url)
+    canonical_site_url = URL.canonical(site_url)
+
+    path = URI.parse(canonical_url).path
+    base = URI.parse(canonical_site_url).path || ""
+
+    String.replace_prefix(path, base, "")
   end
 
   defp parse_datetime(nil), do: nil
