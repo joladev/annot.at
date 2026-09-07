@@ -163,7 +163,7 @@ defmodule AnnotAt.Atproto.StandardSite do
   def get_public_publication(_site), do: {:error, :no_publication}
 
   def get_public_record(did, collection, rkey) do
-    with {:ok, did_doc} <- Latch.resolve_did(Latch.Shelf, did),
+    with {:ok, did_doc} <- Latch.resolve_did(Latch.AnnotAt, did),
          url = record_url(did_doc.pds_endpoint, did, collection, rkey),
          {:ok, %{"value" => value}} <- HTTP.get_json(url) do
       {:ok, value, did_doc}
