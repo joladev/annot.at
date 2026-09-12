@@ -1,24 +1,30 @@
 defmodule AnnotAt.Atproto.Profile do
   @moduledoc """
-  Fetches public Bluesky profile data (display name, avatar) from the AppView.
+  Fetches public Bluesky profile data (display name, avatar) from the user's PDS, through Slingshot.
+
+  Does not rely on the Bluesky AppView.
   """
 
-  alias AnnotAt.Atproto.HTTP
-
-  @appview "https://public.api.bsky.app"
+  alias AnnotAt.Atproto.Slingshot
 
   @doc """
   Fetches a public profile by DID or handle.
   """
-  @spec fetch(String.t()) ::
-          {:ok, %{display_name: String.t() | nil, avatar_url: String.t() | nil}}
-          | {:error, {:http_status, pos_integer()} | {:transport, term()} | :invalid_json}
   def fetch(actor) do
-    url = "#{@appview}/xrpc/app.bsky.actor.getProfile?#{URI.encode_query(actor: actor)}"
-
-    with {:ok, profile} <- HTTP.get_json(url) do
+    with {:ok, %{did: did, pds: pds}} <- Slingshot.resolve_identity(actor),
+         {:ok, %{"value" => profile}} <-
+           Slingshot.get_record(did, "app.bsky.actor.profile", "self") do
       {:ok,
-       %{display_name: Map.get(profile, "displayName"), avatar_url: Map.get(profile, "avatar")}}
+       %{
+         display_name: profile["displayName"],
+         avatar_url: avatar_url(pds, did, profile["avatar"])
+       }}
     end
   end
+
+  defp avatar_url(pds, did, %{"ref" => %{"$link" => cid}}) when is_binary(pds) do
+    "#{pds}/xrpc/com.atproto.sync.getBlob?did=#{did}&cid=#{cid}"
+  end
+
+  defp avatar_url(_pds, _did, _avatar), do: nil
 end

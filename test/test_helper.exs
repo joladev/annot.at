@@ -1,5 +1,6 @@
 Mimic.copy(AnnotAt.Atproto.Directory)
 Mimic.copy(AnnotAt.Atproto.HTTP)
+Mimic.copy(AnnotAt.Atproto.Slingshot)
 Mimic.copy(AnnotAt.Atproto.Profile)
 Mimic.copy(AnnotAt.Atproto.StandardSite)
 Mimic.copy(AnnotAt.Feeds.Client)

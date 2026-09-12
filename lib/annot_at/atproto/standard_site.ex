@@ -6,6 +6,7 @@ defmodule AnnotAt.Atproto.StandardSite do
 
   alias AnnotAt.Accounts
   alias AnnotAt.Atproto.HTTP
+  alias AnnotAt.Atproto.Slingshot
   alias AnnotAt.Atproto.StandardSite.Document
   alias AnnotAt.Atproto.StandardSite.Publication
 
@@ -163,10 +164,9 @@ defmodule AnnotAt.Atproto.StandardSite do
   def get_public_publication(_site), do: {:error, :no_publication}
 
   def get_public_record(did, collection, rkey) do
-    with {:ok, did_doc} <- Latch.resolve_did(Latch.AnnotAt, did),
-         url = record_url(did_doc.pds_endpoint, did, collection, rkey),
-         {:ok, %{"value" => value}} <- HTTP.get_json(url) do
-      {:ok, value, did_doc}
+    with {:ok, %{did: did, handle: handle, pds: pds}} <- Slingshot.resolve_identity(did),
+         {:ok, %{"value" => value}} <- Slingshot.get_record(did, collection, rkey) do
+      {:ok, value, %{did: did, handle: handle, pds_endpoint: pds}}
     end
   end
 
@@ -272,11 +272,6 @@ defmodule AnnotAt.Atproto.StandardSite do
     else
       String.slice(text, 0, max)
     end
-  end
-
-  defp record_url(pds, did, collection, rkey) do
-    query = URI.encode_query(repo: did, collection: collection, rkey: rkey)
-    "#{pds}/xrpc/com.atproto.repo.getRecord?#{query}"
   end
 
   defp parse_aturi("at://" <> rest, collection) do

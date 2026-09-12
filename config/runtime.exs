@@ -23,6 +23,8 @@ end
 config :annot_at, AnnotAtWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4002"))]
 
+config :annot_at, slingshot_url: System.get_env("SLINGSHOT_URL", "https://slingshot.cove.town")
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
