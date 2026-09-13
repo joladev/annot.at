@@ -17,6 +17,7 @@ config :annot_at, AnnotAtWeb.Endpoint,
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
     formats: [html: AnnotAtWeb.ErrorHTML, json: AnnotAtWeb.ErrorJSON],
+    root_layout: [html: {AnnotAtWeb.Layouts, :root}],
     layout: false
   ],
   pubsub_server: AnnotAt.PubSub,
