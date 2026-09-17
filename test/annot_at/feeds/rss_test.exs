@@ -77,4 +77,25 @@ defmodule AnnotAt.Feeds.RSSTest do
 
     assert {:error, :invalid_feed} = RSS.parse(body)
   end
+
+  test "skips empty categories" do
+    body = """
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <rss version="2.0">
+      <channel>
+        <title>Sample Blog</title>
+        <link>https://example.com</link>
+        <item>
+          <title>First Post</title>
+          <link>https://example.com/posts/first</link>
+          <guid>abc</guid>
+          <category> </category>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    assert {:ok, %Feed{} = feed} = RSS.parse(body)
+    assert [] = hd(feed.entries).categories
+  end
 end
