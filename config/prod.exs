@@ -36,4 +36,5 @@ config :annot_at, AnnotAt.Latch,
   client_name: "annot.at",
   client_id_path: "/oauth-client-metadata.json",
   redirect_uri_path: "/auth/callback",
-  base_url_fun: &AnnotAtWeb.Endpoint.url/0
+  base_url_fun: &AnnotAtWeb.Endpoint.url/0,
+  slingshot_url: "https://slingshot.cove.town"
