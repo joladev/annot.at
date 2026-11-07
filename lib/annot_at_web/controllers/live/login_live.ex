@@ -66,7 +66,7 @@ defmodule AnnotAtWeb.LoginLive do
                   id="handle"
                   value={@form[:handle].value}
                   placeholder="alice.bsky.social"
-                  phx-debounce="150"
+                  phx-throttle="100"
                   role="combobox"
                   aria-autocomplete="list"
                   aria-controls="handle-listbox"

@@ -5,7 +5,7 @@ defmodule AnnotAt.Atproto.Directory do
 
   alias AnnotAt.Atproto.HTTP
 
-  @endpoint "https://typeahead.waow.tech/xrpc/app.bsky.actor.searchActorsTypeahead"
+  @endpoint "https://typeahead.cove.town/xrpc/town.cove.actor.searchActorsTypeahead"
 
   @type suggestion :: %{
           handle: String.t(),
@@ -13,11 +13,6 @@ defmodule AnnotAt.Atproto.Directory do
           avatar: String.t() | nil
         }
 
-  @doc """
-  Search typeahead.waow.tech for matching handles, passing the x-client header
-  for attribution. Doesn't really do error handling to avoid spamming logs, and
-  it's not a critical code path.
-  """
   @spec search_handles(String.t()) :: [suggestion()]
   def search_handles(query) do
     encoded_query = URI.encode_query(q: query, limit: 6)
