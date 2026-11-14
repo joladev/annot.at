@@ -49,7 +49,11 @@ defmodule AnnotAtWeb.Endpoint do
     pass: ["*/*"],
     json_decoder: Phoenix.json_library()
 
-  plug Sentry.PlugContext
+  plug Sentry.PlugContext,
+    body_scrubber: nil,
+    header_scrubber: {AnnotAt.Sentry, :scrub_headers},
+    remote_address_reader: nil
+
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options

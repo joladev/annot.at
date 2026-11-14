@@ -94,7 +94,9 @@ config :sentry,
   environment_name: Mix.env(),
   enable_source_code_context: true,
   root_source_code_paths: [File.cwd!()],
-  client: Sentry.FinchClient
+  client: Sentry.FinchClient,
+  before_send_metric: {AnnotAt.Sentry, :drop_metric},
+  scrubber: [param_keys: ["code", "state"]]
 
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
